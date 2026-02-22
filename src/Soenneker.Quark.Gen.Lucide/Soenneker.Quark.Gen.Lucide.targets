@@ -10,6 +10,8 @@
         <_LucideProjectDir>$(MSBuildProjectDirectory)</_LucideProjectDir>
         <LucideSvgMapOutput Condition="'$(LucideSvgMapOutput)' == ''">$(IntermediateOutputPath)Generated\LucideIconSvgMap.g.cs</LucideSvgMapOutput>
         <_LucideOutputArg Condition="'$(LucideSvgMapOutput)' != ''"> --output &quot;$(LucideSvgMapOutput)&quot;</_LucideOutputArg>
+        <_LucidePackagesArg Condition="'$(RestorePackagesPath)' != ''"> --packagesPath &quot;$(RestorePackagesPath)&quot;</_LucidePackagesArg>
+        <_LucidePackagesArg Condition="'$(_LucidePackagesArg)' == '' and '$(NuGetPackageRoot)' != ''"> --packagesPath &quot;$(NuGetPackageRoot)&quot;</_LucidePackagesArg>
     </PropertyGroup>
 
     <!-- Resolve BuildTasksDllPath at target execution time (after BuildTasks has been built), not at load time. -->
@@ -39,7 +41,7 @@
               ConsoleToMSBuild="true"
               StandardOutputImportance="high"
               StandardErrorImportance="high"
-              Command='dotnet exec &quot;$(BuildTasksDllPath)&quot; --projectDir &quot;$(_LucideProjectDir)&quot;$(_LucideOutputArg)' />
+              Command='dotnet exec &quot;$(BuildTasksDllPath)&quot; --projectDir &quot;$(_LucideProjectDir)&quot;$(_LucideOutputArg)$(_LucidePackagesArg)' />
     </Target>
 
     <Target Name="IncludeGeneratedLucideIconSvgMap" AfterTargets="RunLucideGeneratorBuildTasks">

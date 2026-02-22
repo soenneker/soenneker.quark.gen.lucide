@@ -56,10 +56,13 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
             return 0;
         }
 
-        string? packageRoot = TryResolvePackageRoot();
+        string? packagesRoot = map.TryGetValue("--packagesPath", out string? pkgs) && !string.IsNullOrWhiteSpace(pkgs)
+            ? Path.GetFullPath(pkgs.Trim().Trim('"'))
+            : null;
+        string? packageRoot = TryResolvePackageRoot(packagesRoot);
         if (packageRoot == null)
         {
-            _logger.LogWarning("Soenneker.Lucide.Icons package not found in NuGet cache. LucideIconSvgMap will have no SVG content.");
+            _logger.LogWarning("Soenneker.Lucide.Icons package not found in NuGet cache. LucideIconSvgMap will have no SVG content. Set --packagesPath if using a custom restore path.");
         }
 
         string content = GenerateLucideIconSvgMap(icons, packageRoot);
@@ -111,12 +114,10 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         return icons;
     }
 
-    private static string? TryResolvePackageRoot()
+    private static string? TryResolvePackageRoot(string? packagesRoot = null)
     {
-        string packagesRoot = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".nuget",
-            "packages");
+        packagesRoot ??= Environment.GetEnvironmentVariable("NUGET_PACKAGES")
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
 
         string packageDir = Path.Combine(packagesRoot, _packageId);
         if (!Directory.Exists(packageDir))
