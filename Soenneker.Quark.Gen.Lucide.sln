@@ -1,8 +1,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.5.33209.295
+# Visual Studio Version 18
+VisualStudioVersion = 18.4.11513.90 insiders
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soenneker.Quark.Gen.Lucide", "src\Soenneker.Quark.Gen.Lucide.csproj", "{41850636-33B4-4228-AE59-A2113F66B9FA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soenneker.Quark.Gen.Lucide", "src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.csproj", "{41850636-33B4-4228-AE59-A2113F66B9FA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{4E42254D-039C-40ED-B3F4-8C1A94A366D1}"
 	ProjectSection(SolutionItems) = preProject
@@ -16,6 +16,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soenneker.Quark.Gen.Lucide.Tests", "test\Soenneker.Quark.Gen.Lucide.Tests\Soenneker.Quark.Gen.Lucide.Tests.csproj", "{6456E465-9523-4612-9115-9D9B585B42E8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soenneker.Quark.Gen.Lucide.BuildTasks", "src\Soenneker.Quark.Gen.Lucide.BuildTasks\Soenneker.Quark.Gen.Lucide.BuildTasks.csproj", "{5439E5DA-CD84-249B-8C5A-DDD0D72A0C81}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soenneker.Quark.Gen.Lucide.Demo", "test\Soenneker.Quark.Gen.Lucide.Demo\Soenneker.Quark.Gen.Lucide.Demo.csproj", "{E4E5FD89-685F-4237-BD37-0389035BDCF7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{81EF41E6-82F4-404F-9FCE-049B4CBCE196}"
 EndProject
@@ -35,6 +39,14 @@ Global
 		{6456E465-9523-4612-9115-9D9B585B42E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6456E465-9523-4612-9115-9D9B585B42E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6456E465-9523-4612-9115-9D9B585B42E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5439E5DA-CD84-249B-8C5A-DDD0D72A0C81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5439E5DA-CD84-249B-8C5A-DDD0D72A0C81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5439E5DA-CD84-249B-8C5A-DDD0D72A0C81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5439E5DA-CD84-249B-8C5A-DDD0D72A0C81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4E5FD89-685F-4237-BD37-0389035BDCF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4E5FD89-685F-4237-BD37-0389035BDCF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4E5FD89-685F-4237-BD37-0389035BDCF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4E5FD89-685F-4237-BD37-0389035BDCF7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -43,6 +55,8 @@ Global
 		{41850636-33B4-4228-AE59-A2113F66B9FA} = {81EF41E6-82F4-404F-9FCE-049B4CBCE196}
 		{D786EC1A-4F59-412F-8624-83E6E3525B0C} = {4E42254D-039C-40ED-B3F4-8C1A94A366D1}
 		{6456E465-9523-4612-9115-9D9B585B42E8} = {47FB874E-6667-4D2D-AB56-2BE057BDE46F}
+		{5439E5DA-CD84-249B-8C5A-DDD0D72A0C81} = {81EF41E6-82F4-404F-9FCE-049B4CBCE196}
+		{E4E5FD89-685F-4237-BD37-0389035BDCF7} = {47FB874E-6667-4D2D-AB56-2BE057BDE46F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B849EC5C-B7B3-4C90-9B66-CBC15CCB776A}

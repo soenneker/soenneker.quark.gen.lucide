@@ -1,0 +1,31 @@
+@page "/"
+
+<PageTitle>Gen.Lucide Demo</PageTitle>
+
+<h1>Gen.Lucide Demo</h1>
+
+<p>Lucide icon usages below trigger the BuildTasks generator to produce <code>LucideIconSvgMap.g.cs</code>.</p>
+
+@* Icon usages that the generator scans for *@
+<div class="mb-3">
+    <span>AArrowDown: </span>
+    @if (GetSvg(LucideIcon.AArrowDown) is { } arrow)
+    {
+        @((MarkupString)arrow)
+    }
+</div>
+
+<div class="mb-3">
+    <span>Check: </span>
+    @if (GetSvg(LucideIcon.Check) is { } check)
+    {
+        @((MarkupString)check)
+    }
+</div>
+
+@code {
+    private static string? GetSvg(LucideIcon icon)
+    {
+        return Generated.LucideIconSvgMap.GetSvg(icon.ToString());
+    }
+}

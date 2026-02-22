@@ -1,0 +1,52 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <Target Name="LucideGeneratorBuild_Imported" BeforeTargets="Build">
+        <Message Importance="high" Text="Soenneker.Quark.Gen.Lucide targets imported from: $(MSBuildThisFileFullPath)" />
+    </Target>
+
+    <PropertyGroup>
+        <LucideGeneratorBuildEnabled Condition="'$(LucideGeneratorBuildEnabled)'==''">true</LucideGeneratorBuildEnabled>
+        <!-- Use MSBuildProjectDirectory (project folder) for reliable scanning of .cs/.razor files. -->
+        <_LucideProjectDir>$(MSBuildProjectDirectory)</_LucideProjectDir>
+        <LucideSvgMapOutput Condition="'$(LucideSvgMapOutput)' == ''">$(IntermediateOutputPath)Generated\LucideIconSvgMap.g.cs</LucideSvgMapOutput>
+        <_LucideOutputArg Condition="'$(LucideSvgMapOutput)' != ''"> --output &quot;$(LucideSvgMapOutput)&quot;</_LucideOutputArg>
+    </PropertyGroup>
+
+    <!-- Resolve BuildTasksDllPath at target execution time (after BuildTasks has been built), not at load time. -->
+    <Target Name="ResolveLucideBuildTasksPath" BeforeTargets="RunLucideGeneratorBuildTasks">
+        <PropertyGroup Condition="'$(BuildTasksDllPath)' == ''">
+            <_LucideBuildTasksCandidate Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
+            <_LucideBuildTasksCandidate Condition="'$(_LucideBuildTasksCandidate)' == '' and Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\buildTransitive\Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
+            <_LucideBuildTasksCandidate Condition="'$(_LucideBuildTasksCandidate)' == '' and Exists('$(MSBuildThisFileDirectory)..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
+            <BuildTasksDllPath Condition="'$(_LucideBuildTasksCandidate)' != ''">$(_LucideBuildTasksCandidate)</BuildTasksDllPath>
+        </PropertyGroup>
+    </Target>
+
+    <Target Name="RunLucideGeneratorBuildTasks"
+            BeforeTargets="CoreCompile"
+            Condition="'$(DesignTimeBuild)'!='true' and '$(IsCrossTargetingBuild)'!='true' and '$(LucideGeneratorBuildEnabled)'=='true'">
+
+        <Message Importance="high" Text="Running Soenneker.Quark.Gen.Lucide BuildTasks: projectDir=$(_LucideProjectDir)" />
+        <Error Condition="'$(_LucideProjectDir)' == ''"
+               Text="Soenneker.Quark.Gen.Lucide: project directory could not be resolved. Set LucideProjectDir or build a project that has a valid project directory." />
+        <Error Condition="'$(BuildTasksDllPath)'==''"
+               Text="BuildTasksDllPath was not resolved. MSBuildThisFileDirectory=$(MSBuildThisFileDirectory)" />
+        <Error Condition="!Exists('$(BuildTasksDllPath)')"
+               Text="BuildTasks DLL not found at '$(BuildTasksDllPath)'." />
+
+        <Exec WorkingDirectory="$(_LucideProjectDir)"
+              IgnoreExitCode="false"
+              ConsoleToMSBuild="true"
+              StandardOutputImportance="high"
+              StandardErrorImportance="high"
+              Command='dotnet exec &quot;$(BuildTasksDllPath)&quot; --projectDir &quot;$(_LucideProjectDir)&quot;$(_LucideOutputArg)' />
+    </Target>
+
+    <Target Name="IncludeGeneratedLucideIconSvgMap" AfterTargets="RunLucideGeneratorBuildTasks">
+        <ItemGroup Condition="Exists('$(LucideSvgMapOutput)')">
+            <!-- Remove first to avoid CS2002 when the file is already included (e.g. under CompilerGeneratedFilesOutputPath or default glob). -->
+            <Compile Remove="$(LucideSvgMapOutput)" />
+            <Compile Include="$(LucideSvgMapOutput)" />
+        </ItemGroup>
+    </Target>
+</Project>

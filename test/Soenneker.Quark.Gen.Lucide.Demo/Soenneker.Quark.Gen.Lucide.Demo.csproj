@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
+        <StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <IsPackable>false</IsPackable>
+        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+        <AssemblyName>Soenneker.Quark.Gen.Lucide.Demo</AssemblyName>
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <AttachWeakETagToCompressedAssetsDuringDevelopment>true</AttachWeakETagToCompressedAssetsDuringDevelopment>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.3" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.3" PrivateAssets="all" />
+        <PackageReference Include="Soenneker.Lucide.Enums.Icons" Version="4.0.3" />
+        <PackageReference Include="Soenneker.Lucide.Icons" Version="4.0.13" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <!-- When using ProjectReference to Gen.Lucide, the SDK does not import the referenced project's .targets, so RunLucideGeneratorBuildTasks never runs. Import explicitly. -->
+    <Import Project="..\..\src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.targets" Condition="Exists('..\..\src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.targets')" />
+
+</Project>
