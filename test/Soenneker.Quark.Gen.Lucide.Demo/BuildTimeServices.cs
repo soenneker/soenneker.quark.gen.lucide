@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Soenneker.Quark;
 
 namespace Soenneker.Quark.Gen.Lucide.Demo;
 
@@ -10,5 +11,7 @@ public static class BuildTimeServices
     public static void Configure(IServiceCollection services, string baseAddress)
     {
         services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(baseAddress) });
+        services.AddQuarkSuiteAsScoped();
+        services.AddScoped<ILucideIconSvgProvider, LucideIconSvgProvider>();
     }
 }

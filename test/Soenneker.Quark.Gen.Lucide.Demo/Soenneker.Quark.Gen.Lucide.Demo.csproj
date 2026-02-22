@@ -19,11 +19,12 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.3" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.3" PrivateAssets="all" />
-        <PackageReference Include="Soenneker.Lucide.Enums.Icons" Version="4.0.3" />
-        <PackageReference Include="Soenneker.Lucide.Icons" Version="4.0.13" />
+        <PackageReference Include="Soenneker.Lucide.Enums.Icons" Version="4.0.4" />
+        <PackageReference Include="Soenneker.Lucide.Icons" Version="4.0.14" />
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\soenneker.quark.suite\src\Soenneker.Quark.Suite.csproj" />
         <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
