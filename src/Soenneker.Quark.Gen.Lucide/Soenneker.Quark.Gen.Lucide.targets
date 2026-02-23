@@ -44,11 +44,22 @@
               Command='dotnet exec &quot;$(BuildTasksDllPath)&quot; --projectDir &quot;$(_LucideProjectDir)&quot;$(_LucideOutputArg)$(_LucidePackagesArg)' />
     </Target>
 
+    <PropertyGroup>
+        <LucideSvgProviderOutput Condition="'$(LucideSvgProviderOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconSvgProvider.g.cs'))</LucideSvgProviderOutput>
+    </PropertyGroup>
+
     <Target Name="IncludeGeneratedLucideIconSvgMap" AfterTargets="RunLucideGeneratorBuildTasks">
         <ItemGroup Condition="Exists('$(LucideSvgMapOutput)')">
             <!-- Remove first to avoid CS2002 when the file is already included (e.g. under CompilerGeneratedFilesOutputPath or default glob). -->
             <Compile Remove="$(LucideSvgMapOutput)" />
             <Compile Include="$(LucideSvgMapOutput)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="IncludeGeneratedLucideIconSvgProvider" AfterTargets="RunLucideGeneratorBuildTasks">
+        <ItemGroup Condition="Exists('$(LucideSvgProviderOutput)')">
+            <Compile Remove="$(LucideSvgProviderOutput)" />
+            <Compile Include="$(LucideSvgProviderOutput)" />
         </ItemGroup>
     </Target>
 </Project>

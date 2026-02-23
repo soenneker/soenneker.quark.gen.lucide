@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Soenneker.Quark;
+using Soenneker.Quark.Gen.Lucide.Generated;
 
 namespace Soenneker.Quark.Gen.Lucide.Demo;
 
