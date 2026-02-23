@@ -46,6 +46,7 @@
 
     <PropertyGroup>
         <LucideSvgProviderOutput Condition="'$(LucideSvgProviderOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconSvgProvider.g.cs'))</LucideSvgProviderOutput>
+        <LucideServiceCollectionExtensionsOutput Condition="'$(LucideServiceCollectionExtensionsOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconServiceCollectionExtensions.g.cs'))</LucideServiceCollectionExtensionsOutput>
     </PropertyGroup>
 
     <Target Name="IncludeGeneratedLucideIconSvgMap" AfterTargets="RunLucideGeneratorBuildTasks">
@@ -60,6 +61,13 @@
         <ItemGroup Condition="Exists('$(LucideSvgProviderOutput)')">
             <Compile Remove="$(LucideSvgProviderOutput)" />
             <Compile Include="$(LucideSvgProviderOutput)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="IncludeGeneratedLucideIconServiceCollectionExtensions" AfterTargets="RunLucideGeneratorBuildTasks">
+        <ItemGroup Condition="Exists('$(LucideServiceCollectionExtensionsOutput)')">
+            <Compile Remove="$(LucideServiceCollectionExtensionsOutput)" />
+            <Compile Include="$(LucideServiceCollectionExtensionsOutput)" />
         </ItemGroup>
     </Target>
 </Project>

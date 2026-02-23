@@ -24,8 +24,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\soenneker.quark.suite\src\Soenneker.Quark.Suite.csproj" />
-        <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <!-- When building in CI (only this repo cloned), Quark Suite is not on disk; use the NuGet package. -->
+        <PackageReference Include="Soenneker.Quark.Suite" Version="4.0.0" Condition="!Exists('..\..\..\soenneker.quark.suite\src\Soenneker.Quark.Suite.csproj')" />
+        <ProjectReference Include="..\..\..\soenneker.quark.suite\src\Soenneker.Quark.Suite.csproj" Condition="Exists('..\..\..\soenneker.quark.suite\src\Soenneker.Quark.Suite.csproj')" />
+        <!-- ReferenceOutputAssembly=true so the Demo gets ILucideIconSvgProvider from Gen.Lucide (no suite dependency for the contract). -->
+        <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
     </ItemGroup>
 
     <!-- When using ProjectReference to Gen.Lucide, the SDK does not import the referenced project's .targets, so RunLucideGeneratorBuildTasks never runs. Import explicitly. -->
