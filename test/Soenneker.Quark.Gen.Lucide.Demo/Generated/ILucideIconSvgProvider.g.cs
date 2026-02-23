@@ -10,7 +10,7 @@ namespace Soenneker.Quark.Gen.Lucide.Generated;
 public interface ILucideIconSvgProvider
 {
     /// <summary>
-    /// Returns the SVG markup for the given Lucide icon name (PascalCase), or null if not found.
+    /// Returns the SVG markup for the given Lucide icon name (PascalCase), or null if not found. 
     /// </summary>
     string? GetSvg(string iconName);
 }
