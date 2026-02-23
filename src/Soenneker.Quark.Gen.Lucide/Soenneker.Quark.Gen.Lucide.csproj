@@ -50,8 +50,13 @@
         <None Include="Soenneker.Quark.Gen.Lucide.targets" Pack="true" PackagePath="build\" />
         <None Include="Soenneker.Quark.Gen.Lucide.targets" Pack="true" PackagePath="buildTransitive\" />
 
-        <None Include="..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\**\*.*"
-              Pack="true" PackagePath="buildTransitive\%(RecursiveDir)" />
+        <!-- Pack BuildTasks flat into build\ so NuGet consumers find the DLL next to the .targets (MSBuildThisFileDirectory). -->
+        <None Include="..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\*"
+              Pack="true" PackagePath="build\" />
+
+        <!-- buildTransitive: keep for transitive refs; flat path so targets can resolve without subdir. -->
+        <None Include="..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\*"
+              Pack="true" PackagePath="buildTransitive\" />
     </ItemGroup>
 
     <ItemGroup>

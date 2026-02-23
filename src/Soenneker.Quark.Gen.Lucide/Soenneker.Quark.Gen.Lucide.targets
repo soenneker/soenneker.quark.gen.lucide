@@ -17,8 +17,14 @@
     <!-- Resolve BuildTasksDllPath at target execution time (after BuildTasks has been built), not at load time. -->
     <Target Name="ResolveLucideBuildTasksPath" BeforeTargets="RunLucideGeneratorBuildTasks">
         <PropertyGroup Condition="'$(BuildTasksDllPath)' == ''">
+            <!-- Preferred: DLL next to .targets in build\ (NuGet package with flat pack). -->
             <_LucideBuildTasksCandidate Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
+            <!-- buildTransitive flat (legacy). -->
             <_LucideBuildTasksCandidate Condition="'$(_LucideBuildTasksCandidate)' == '' and Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\buildTransitive\Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
+            <!-- buildTransitive with Configuration subdir (older 4.x packages used %(RecursiveDir)). -->
+            <_LucideBuildTasksCandidate Condition="'$(_LucideBuildTasksCandidate)' == '' and Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Release\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\buildTransitive\Release\Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
+            <_LucideBuildTasksCandidate Condition="'$(_LucideBuildTasksCandidate)' == '' and Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Debug\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\buildTransitive\Debug\Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
+            <!-- ProjectReference / local dev. -->
             <_LucideBuildTasksCandidate Condition="'$(_LucideBuildTasksCandidate)' == '' and Exists('$(MSBuildThisFileDirectory)..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
             <BuildTasksDllPath Condition="'$(_LucideBuildTasksCandidate)' != ''">$(_LucideBuildTasksCandidate)</BuildTasksDllPath>
         </PropertyGroup>
