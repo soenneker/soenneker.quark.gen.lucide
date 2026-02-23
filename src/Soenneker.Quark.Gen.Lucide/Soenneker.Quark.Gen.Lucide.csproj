@@ -51,44 +51,32 @@
         <None Include="Soenneker.Quark.Gen.Lucide.targets" Pack="true" PackagePath="buildTransitive\" />
 
         <!-- Pack BuildTasks flat into build\ so NuGet consumers find the DLL next to the .targets (MSBuildThisFileDirectory). -->
-        <None Include="..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\*"
-              Pack="true" PackagePath="build\" />
+        <None Include="..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\*" Pack="true" PackagePath="build\" />
 
         <!-- buildTransitive: keep for transitive refs; flat path so targets can resolve without subdir. -->
-        <None Include="..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\*"
-              Pack="true" PackagePath="buildTransitive\" />
+        <None Include="..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\*" Pack="true" PackagePath="buildTransitive\" />
     </ItemGroup>
 
     <ItemGroup>
         <None Include="$(TargetPath)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
         <None Include="$(TargetDir)$(AssemblyName).pdb" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
-        <!-- Expose the assembly in lib so consumers get ILucideIconSvgProvider without referencing the suite. -->
-        <None Include="$(TargetPath)" Pack="true" PackagePath="lib\$(TargetFramework)\" Visible="false" />
-        <None Include="$(TargetDir)$(AssemblyName).pdb" Pack="true" PackagePath="lib\$(TargetFramework)\" Visible="false" Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Soenneker.Quark.Gen.Lucide.Abstractions" Version="4.0.2" />
     </ItemGroup>
 
     <!-- When consumed via ProjectReference, BuildTasks must exist so RunLucideGeneratorBuildTasks can run. -->
-    <Target Name="BuildBuildTasksToolOnBuild"
-            BeforeTargets="Build"
-            Condition="!Exists('..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">
+    <Target Name="BuildBuildTasksToolOnBuild" BeforeTargets="Build" Condition="!Exists('..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">
 
-        <MSBuild Projects="..\Soenneker.Quark.Gen.Lucide.BuildTasks\Soenneker.Quark.Gen.Lucide.BuildTasks.csproj"
-                 Targets="Build"
-                 Properties="Configuration=$(Configuration)"
-                 BuildInParallel="true" />
+        <MSBuild Projects="..\Soenneker.Quark.Gen.Lucide.BuildTasks\Soenneker.Quark.Gen.Lucide.BuildTasks.csproj" Targets="Build" Properties="Configuration=$(Configuration)" BuildInParallel="true" />
     </Target>
 
-    <Target Name="BuildBuildTasksTool"
-            BeforeTargets="Pack"
-            Condition="'$(IsPackable)' == 'true'">
+    <Target Name="BuildBuildTasksTool" BeforeTargets="Pack" Condition="'$(IsPackable)' == 'true'">
 
-        <MSBuild Projects="..\Soenneker.Quark.Gen.Lucide.BuildTasks\Soenneker.Quark.Gen.Lucide.BuildTasks.csproj"
-                 Targets="Build"
-                 Properties="Configuration=$(Configuration);NoBuild=false"
-                 BuildInParallel="true" />
+        <MSBuild Projects="..\Soenneker.Quark.Gen.Lucide.BuildTasks\Soenneker.Quark.Gen.Lucide.BuildTasks.csproj" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" BuildInParallel="true" />
 
-        <Error Condition="!Exists('..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')"
-               Text="BuildTasks output missing. Aborting pack to avoid publishing a broken package." />
+        <Error Condition="!Exists('..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')" Text="BuildTasks output missing. Aborting pack to avoid publishing a broken package." />
     </Target>
 
     <ItemGroup>

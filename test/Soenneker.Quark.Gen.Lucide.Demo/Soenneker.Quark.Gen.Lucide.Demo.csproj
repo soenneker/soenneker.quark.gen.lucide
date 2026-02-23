@@ -21,16 +21,12 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.3" PrivateAssets="all" />
         <PackageReference Include="Soenneker.Lucide.Enums.Icons" Version="4.0.4" />
         <PackageReference Include="Soenneker.Lucide.Icons" Version="4.0.14" />
+        <PackageReference Include="Soenneker.Quark.Gen.Lucide.Abstractions" Version="4.0.2" />
     </ItemGroup>
 
     <ItemGroup>
-        <!-- Use generated interface only (LucideIncludeGeneratedInterface=true) so the Demo does not rely on Quark Suite for the contract. -->
         <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
-
-    <PropertyGroup>
-        <LucideIncludeGeneratedInterface>true</LucideIncludeGeneratedInterface>
-    </PropertyGroup>
 
     <!-- When using ProjectReference to Gen.Lucide, the SDK does not import the referenced project's .targets, so RunLucideGeneratorBuildTasks never runs. Import explicitly. -->
     <Import Project="..\..\src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.targets" Condition="Exists('..\..\src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.targets')" />

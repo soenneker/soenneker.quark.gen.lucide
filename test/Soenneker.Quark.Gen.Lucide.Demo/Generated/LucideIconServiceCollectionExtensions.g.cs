@@ -2,6 +2,7 @@
 #nullable enable
 
 using Microsoft.Extensions.DependencyInjection;
+using Soenneker.Quark.Gen.Lucide.Abstractions;
 
 namespace Soenneker.Quark.Gen.Lucide.Generated;
 
