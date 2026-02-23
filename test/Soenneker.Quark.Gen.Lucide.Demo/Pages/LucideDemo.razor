@@ -1,37 +1,25 @@
 @page "/lucide-demo"
+@using Soenneker.Quark.Gen.Lucide.Generated
+@inject ILucideIconSvgProvider SvgProvider
 
-<PageTitle>Lucide Element Demo</PageTitle>
+<PageTitle>Lucide Gen Demo</PageTitle>
 
-<h1>Lucide Element Demo</h1>
+<h1>Lucide Gen Demo</h1>
 
-<p>The <code>Lucide</code> element inherits from <code>TypographicElement</code> like other Quark elements and exposes a <code>LucideIcon</code> property.</p>
+<p>Generated <code>ILucideIconSvgProvider</code> and <code>LucideIconSvgProvider</code> — no Quark Suite dependency.</p>
 
 <div class="space-y-6 mt-6">
     <section>
-        <h2 class="text-lg font-semibold mb-3">Basic icons</h2>
+        <h2 class="text-lg font-semibold mb-3">Icons via generated provider</h2>
         <div class="flex flex-wrap gap-4 items-center">
-            <Lucide LucideIcon="LucideIcon.AArrowDown" Class="size-6" />
-            <Lucide LucideIcon="LucideIcon.Check" Class="size-6" />
-            <Lucide LucideIcon="LucideIcon.Activity" Class="size-6" />
-            <Lucide LucideIcon="LucideIcon.Heart" Class="size-6" />
-        </div>
-    </section>
-
-    <section>
-        <h2 class="text-lg font-semibold mb-3">With text color</h2>
-        <div class="flex flex-wrap gap-4 items-center">
-            <Lucide LucideIcon="LucideIcon.Check" TextColor="TextColor.Primary" Class="size-6" />
-            <Lucide LucideIcon="LucideIcon.Heart" TextColor="TextColor.Danger" Class="size-6" />
-        </div>
-    </section>
-
-    <section>
-        <h2 class="text-lg font-semibold mb-3">Icon with label</h2>
-        <div class="flex gap-2 items-center">
-            <Lucide LucideIcon="LucideIcon.Check" Class="size-5 text-green-600">
-                <span class="sr-only">Completed</span>
-            </Lucide>
-            <span>Task completed</span>
+            @foreach (var name in new[] { "AArrowDown", "Check", "Activity", "Heart" })
+            {
+                var svg = SvgProvider?.GetSvg(name);
+                if (!string.IsNullOrEmpty(svg))
+                {
+                    <span class="inline-block size-6" style="vertical-align: middle">@((MarkupString)svg)</span>
+                }
+            }
         </div>
     </section>
 </div>

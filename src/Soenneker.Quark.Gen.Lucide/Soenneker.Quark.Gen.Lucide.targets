@@ -47,6 +47,9 @@
     <PropertyGroup>
         <LucideSvgProviderOutput Condition="'$(LucideSvgProviderOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconSvgProvider.g.cs'))</LucideSvgProviderOutput>
         <LucideServiceCollectionExtensionsOutput Condition="'$(LucideServiceCollectionExtensionsOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconServiceCollectionExtensions.g.cs'))</LucideServiceCollectionExtensionsOutput>
+        <LucideInterfaceOutput Condition="'$(LucideInterfaceOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'ILucideIconSvgProvider.g.cs'))</LucideInterfaceOutput>
+        <!-- When true, include the generated interface so the project does not need the Gen.Lucide assembly (no reliance on suite for the contract). Set true for standalone consumers; default false to avoid duplicate type when referencing Gen.Lucide. -->
+        <LucideIncludeGeneratedInterface Condition="'$(LucideIncludeGeneratedInterface)' == ''">false</LucideIncludeGeneratedInterface>
     </PropertyGroup>
 
     <Target Name="IncludeGeneratedLucideIconSvgMap" AfterTargets="RunLucideGeneratorBuildTasks">
@@ -68,6 +71,13 @@
         <ItemGroup Condition="Exists('$(LucideServiceCollectionExtensionsOutput)')">
             <Compile Remove="$(LucideServiceCollectionExtensionsOutput)" />
             <Compile Include="$(LucideServiceCollectionExtensionsOutput)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="IncludeGeneratedILucideIconSvgProvider" AfterTargets="RunLucideGeneratorBuildTasks">
+        <ItemGroup Condition="'$(LucideIncludeGeneratedInterface)' == 'true' and Exists('$(LucideInterfaceOutput)')">
+            <Compile Remove="$(LucideInterfaceOutput)" />
+            <Compile Include="$(LucideInterfaceOutput)" />
         </ItemGroup>
     </Target>
 </Project>
