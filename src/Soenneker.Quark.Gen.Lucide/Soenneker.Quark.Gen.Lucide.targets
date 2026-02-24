@@ -9,9 +9,25 @@
         <!-- Use MSBuildProjectDirectory (project folder) for reliable scanning of .cs/.razor files. -->
         <_LucideProjectDir>$(MSBuildProjectDirectory)</_LucideProjectDir>
         <!-- LucideSvgMapOutput and _LucideOutputArg are set in ResolveLucideBuildTasksPath so $(IntermediateOutputPath) is available. -->
-        <_LucidePackagesArg Condition="'$(RestorePackagesPath)' != ''"> --packagesPath &quot;$(RestorePackagesPath)&quot;</_LucidePackagesArg>
-        <_LucidePackagesArg Condition="'$(_LucidePackagesArg)' == '' and '$(NuGetPackageRoot)' != ''"> --packagesPath &quot;$(NuGetPackageRoot)&quot;</_LucidePackagesArg>
     </PropertyGroup>
+
+    <!-- Copy Soenneker.Lucide.Icons SVGs to $(OutputPath)Resources so the generator just reads from there. -->
+    <Target Name="CopyLucideIconsToBuildResources" BeforeTargets="ResolveLucideBuildTasksPath" Condition="'$(DesignTimeBuild)'!='true'">
+        <ItemGroup>
+            <_LucideIconsPkgRef Include="@(PackageReference)" Condition="'%(Identity)' == 'Soenneker.Lucide.Icons'" />
+        </ItemGroup>
+        <PropertyGroup>
+            <_LucideIconsVersion>@(_LucideIconsPkgRef->'%(Version)')</_LucideIconsVersion>
+            <_LucidePackagesRoot Condition="'$(RestorePackagesPath)' != ''">$(RestorePackagesPath)</_LucidePackagesRoot>
+            <_LucidePackagesRoot Condition="'$(_LucidePackagesRoot)' == '' and '$(NuGetPackageRoot)' != ''">$(NuGetPackageRoot)</_LucidePackagesRoot>
+            <_LucideIconsPackageResources Condition="'$(_LucidePackagesRoot)' != '' and '$(_LucideIconsVersion)' != ''">$([System.IO.Path]::Combine('$(_LucidePackagesRoot)', 'soenneker.lucide.icons', '$(_LucideIconsVersion)', 'contentFiles', 'any', 'any', 'Resources'))</_LucideIconsPackageResources>
+        </PropertyGroup>
+        <ItemGroup Condition="Exists('$(_LucideIconsPackageResources)')">
+            <LucideIconSvgFiles Include="$(_LucideIconsPackageResources)\*.svg" />
+        </ItemGroup>
+        <MakeDir Directories="$(OutputPath)Resources" Condition="Exists('$(_LucideIconsPackageResources)')" />
+        <Copy SourceFiles="@(LucideIconSvgFiles)" DestinationFolder="$(OutputPath)Resources" SkipUnchangedFiles="true" Condition="Exists('$(_LucideIconsPackageResources)')" />
+    </Target>
 
     <!-- Resolve BuildTasksDllPath and output paths at target execution time (IntermediateOutputPath is not set when this .targets file is loaded). -->
     <Target Name="ResolveLucideBuildTasksPath" BeforeTargets="RunLucideGeneratorBuildTasks">
@@ -21,6 +37,9 @@
             <LucideSvgProviderOutput Condition="'$(LucideSvgProviderOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconSvgProvider.g.cs'))</LucideSvgProviderOutput>
             <LucideServiceCollectionExtensionsOutput Condition="'$(LucideServiceCollectionExtensionsOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconServiceCollectionExtensions.g.cs'))</LucideServiceCollectionExtensionsOutput>
             <_LucideOutputArg> --output &quot;$(LucideSvgMapOutput)&quot;</_LucideOutputArg>
+            <!-- Generator reads SVGs from build directory / Resources. -->
+            <_LucideResourcesArg Condition="'$(LucideIconsResourcesPath)' != ''"> --resourcesPath &quot;$(LucideIconsResourcesPath)&quot;</_LucideResourcesArg>
+            <_LucideResourcesArg Condition="'$(_LucideResourcesArg)' == ''"> --resourcesPath &quot;$(OutputPath)Resources&quot;</_LucideResourcesArg>
         </PropertyGroup>
         <PropertyGroup Condition="'$(BuildTasksDllPath)' == ''">
             <!-- Preferred: DLL next to .targets in build\ (NuGet package with flat pack). -->
@@ -53,7 +72,7 @@
               ConsoleToMSBuild="true"
               StandardOutputImportance="high"
               StandardErrorImportance="high"
-              Command='dotnet exec &quot;$(BuildTasksDllPath)&quot; --projectDir &quot;$(_LucideProjectDir)&quot;$(_LucideOutputArg)$(_LucidePackagesArg)' />
+              Command='dotnet exec &quot;$(BuildTasksDllPath)&quot; --projectDir &quot;$(_LucideProjectDir)&quot;$(_LucideOutputArg)$(_LucideResourcesArg)' />
     </Target>
 
     <!-- LucideSvgProviderOutput and LucideServiceCollectionExtensionsOutput are set in ResolveLucideBuildTasksPath. -->

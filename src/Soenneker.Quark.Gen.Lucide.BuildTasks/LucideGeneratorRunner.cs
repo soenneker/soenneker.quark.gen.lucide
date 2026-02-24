@@ -7,7 +7,14 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Soenneker.Extensions.String;
+using Soenneker.Extensions.Task;
+using Soenneker.Extensions.ValueTask;
 using Soenneker.Quark.Gen.Lucide.BuildTasks.Abstract;
+using Soenneker.Utils.Case;
+using Soenneker.Utils.Directory.Abstract;
+using Soenneker.Utils.File.Abstract;
+using Soenneker.Utils.PooledStringBuilders;
 
 namespace Soenneker.Quark.Gen.Lucide.BuildTasks;
 
@@ -18,14 +25,15 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         @"LucideIcon\.([A-Za-z0-9_]+)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    private const string _packageId = "soenneker.lucide.icons";
-    private const string _resourcesSubPath = "contentFiles/any/any/Resources";
-
     private readonly ILogger<LucideGeneratorRunner> _logger;
+    private readonly IFileUtil _fileUtil;
+    private readonly IDirectoryUtil _directoryUtil;
 
-    public LucideGeneratorRunner(ILogger<LucideGeneratorRunner> logger)
+    public LucideGeneratorRunner(ILogger<LucideGeneratorRunner> logger, IFileUtil fileUtil, IDirectoryUtil directoryUtil)
     {
         _logger = logger;
+        _fileUtil = fileUtil;
+        _directoryUtil = directoryUtil;
     }
 
     public async ValueTask<int> Run(CancellationToken cancellationToken = default)
@@ -40,7 +48,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
 
         projectDir = Path.GetFullPath(projectDir.Trim().Trim('"'));
 
-        if (!Directory.Exists(projectDir))
+        if (!await _directoryUtil.Exists(projectDir, cancellationToken).NoSync())
         {
             return Fail($"Project directory does not exist: {projectDir}");
         }
@@ -49,61 +57,67 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
             ? Path.GetFullPath(outVal.Trim().Trim('"'))
             : Path.Combine(projectDir, "obj", "Generated", "LucideIconSvgMap.g.cs");
 
-        HashSet<string> icons = await CollectIconsFromProject(projectDir, cancellationToken).ConfigureAwait(false);
+        HashSet<string> icons = await CollectIconsFromProject(projectDir, cancellationToken).NoSync();
         if (icons.Count == 0)
         {
             _logger.LogInformation("No LucideIcon usages found. Skipping LucideIconSvgMap generation.");
             return 0;
         }
 
-        string? packagesRoot = map.TryGetValue("--packagesPath", out string? pkgs) && !string.IsNullOrWhiteSpace(pkgs)
-            ? Path.GetFullPath(pkgs.Trim().Trim('"'))
-            : null;
-        string? packageRoot = TryResolvePackageRoot(packagesRoot);
-        if (packageRoot == null)
+        // SVGs live in build directory / Resources (e.g. $(OutputPath)Resources). Use explicit path if provided, else projectDir/Resources.
+        string resourcesDir;
+        if (map.TryGetValue("--resourcesPath", out string? resPath) && !string.IsNullOrWhiteSpace(resPath))
         {
-            _logger.LogWarning("Soenneker.Lucide.Icons package not found in NuGet cache. LucideIconSvgMap will have no SVG content. Set --packagesPath if using a custom restore path.");
+            resourcesDir = Path.GetFullPath(resPath.Trim().Trim('"'));
+        }
+        else
+        {
+            resourcesDir = Path.Combine(projectDir, "Resources");
         }
 
-        string content = GenerateLucideIconSvgMap(icons, packageRoot);
+        if (!await _directoryUtil.Exists(resourcesDir, cancellationToken).NoSync())
+        {
+            _logger.LogWarning("Lucide Resources directory does not exist: {Path}. LucideIconSvgMap will have no SVG content.", resourcesDir);
+        }
+
+        string content = await GenerateLucideIconSvgMap(icons, resourcesDir, cancellationToken).NoSync();
         string? outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir))
+
+        if (outputDir.HasContent())
         {
-            Directory.CreateDirectory(outputDir);
+            await _directoryUtil.CreateIfDoesNotExist(outputDir, true, cancellationToken).NoSync();
         }
 
-        await File.WriteAllTextAsync(outputPath, content, cancellationToken).ConfigureAwait(false);
+        await _fileUtil.Write(outputPath, content, log: true, cancellationToken).NoSync();
         _logger.LogInformation("Generated {Output} with {Count} icons.", outputPath, icons.Count);
 
-        string providerPath = Path.Combine(outputDir ?? Directory.GetCurrentDirectory(), "LucideIconSvgProvider.g.cs");
+        string providerPath = Path.Combine(outputDir ?? _directoryUtil.GetWorkingDirectory(), "LucideIconSvgProvider.g.cs");
         string providerContent = GenerateLucideIconSvgProvider();
-        await File.WriteAllTextAsync(providerPath, providerContent, cancellationToken).ConfigureAwait(false);
+        await _fileUtil.Write(providerPath, providerContent, log: true, cancellationToken).NoSync();
         _logger.LogInformation("Generated {ProviderPath}.", providerPath);
 
-        string extensionsPath = Path.Combine(outputDir ?? Directory.GetCurrentDirectory(), "LucideIconServiceCollectionExtensions.g.cs");
+        string extensionsPath = Path.Combine(outputDir ?? _directoryUtil.GetWorkingDirectory(), "LucideIconServiceCollectionExtensions.g.cs");
         string extensionsContent = GenerateLucideIconServiceCollectionExtensions();
-        await File.WriteAllTextAsync(extensionsPath, extensionsContent, cancellationToken).ConfigureAwait(false);
+        await _fileUtil.Write(extensionsPath, extensionsContent, log: true, cancellationToken).NoSync();
         _logger.LogInformation("Generated {ExtensionsPath}.", extensionsPath);
 
         return 0;
     }
 
-    private static async Task<HashSet<string>> CollectIconsFromProject(string projectDir, CancellationToken ct)
+    private async Task<HashSet<string>> CollectIconsFromProject(string projectDir, CancellationToken ct)
     {
         var icons = new HashSet<string>(StringComparer.Ordinal);
-        IEnumerable<string> csFiles = Directory.EnumerateFiles(projectDir, "*.cs", SearchOption.AllDirectories)
-                                               .Concat(Directory.EnumerateFiles(projectDir, "*.razor", SearchOption.AllDirectories))
-                                               .Where(p => !p.Contains("\\obj\\") && !p.Contains("/obj/") && !p.Contains("\\bin\\") && !p.Contains("/bin/"));
+        List<string> csFiles = await _directoryUtil.GetFilesByExtension(projectDir, ".cs", recursive: true, ct).NoSync();
+        List<string> razorFiles = await _directoryUtil.GetFilesByExtension(projectDir, ".razor", recursive: true, ct).NoSync();
+        IEnumerable<string> allFiles = csFiles.Concat(razorFiles)
+            .Where(p => !p.Contains("\\obj\\", StringComparison.Ordinal) && !p.Contains("/obj/", StringComparison.Ordinal)
+                && !p.Contains("\\bin\\", StringComparison.Ordinal) && !p.Contains("/bin/", StringComparison.Ordinal));
 
-        foreach (string file in csFiles)
+        foreach (string file in allFiles)
         {
             ct.ThrowIfCancellationRequested();
-            string content;
-            try
-            {
-                content = await File.ReadAllTextAsync(file, ct).ConfigureAwait(false);
-            }
-            catch
+            string? content = await _fileUtil.TryRead(file, log: false, ct).NoSync();
+            if (string.IsNullOrEmpty(content))
             {
                 continue;
             }
@@ -125,69 +139,11 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         return icons;
     }
 
-    private static string? TryResolvePackageRoot(string? packagesRoot = null)
+    /// <param name="resourcesDir">Directory containing the SVG files (e.g. project Resources or $(OutputPath)Resources).</param>
+    private async ValueTask<string?> ReadSvgContent(string resourcesDir, string kebabIconName, CancellationToken cancellationToken)
     {
-        packagesRoot ??= Environment.GetEnvironmentVariable("NUGET_PACKAGES")
-            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
-
-        string packageDir = Path.Combine(packagesRoot, _packageId);
-        if (!Directory.Exists(packageDir))
-        {
-            return null;
-        }
-
-        List<string?> versions = Directory.GetDirectories(packageDir)
-                                          .Select(Path.GetFileName)
-                                          .Where(n => !string.IsNullOrEmpty(n) && n![0] >= '0' && n[0] <= '9')
-                                          .OrderByDescending(n => n, StringComparer.Ordinal)
-                                          .ToList();
-
-        return versions.Count > 0 ? Path.Combine(packageDir, versions[0]) : null;
-    }
-
-    private static string? ReadSvgContent(string packageRoot, string kebabIconName)
-    {
-        string path = Path.Combine(packageRoot, _resourcesSubPath, kebabIconName + ".svg");
-        if (!File.Exists(path))
-        {
-            return null;
-        }
-
-        try
-        {
-            return File.ReadAllText(path);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static string PascalToKebab(string pascal)
-    {
-        if (string.IsNullOrEmpty(pascal))
-        {
-            return pascal;
-        }
-
-        var sb = new StringBuilder(pascal.Length + 4);
-        for (var i = 0; i < pascal.Length; i++)
-        {
-            char c = pascal[i];
-            if (char.IsUpper(c))
-            {
-                if (i > 0)
-                {
-                    sb.Append('-');
-                }
-                sb.Append(char.ToLowerInvariant(c));
-            }
-            else
-            {
-                sb.Append(c);
-            }
-        }
-        return sb.ToString();
+        string path = Path.Combine(resourcesDir, kebabIconName + ".svg");
+        return await _fileUtil.TryRead(path, log: false, cancellationToken).NoSync();
     }
 
     private static string EscapeForCSharpString(string value)
@@ -205,7 +161,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
             .Replace("\r", "\\n");
     }
 
-    private string GenerateLucideIconSvgMap(HashSet<string> iconNames, string? packageRoot)
+    private async Task<string> GenerateLucideIconSvgMap(HashSet<string> iconNames, string? resourcesDir, CancellationToken cancellationToken)
     {
         var sb = new StringBuilder();
         sb.AppendLine("// <auto-generated/>");
@@ -228,8 +184,9 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
 
         foreach (string iconName in iconNames.OrderBy(x => x, StringComparer.Ordinal))
         {
-            string kebab = PascalToKebab(iconName);
-            string? svgContent = packageRoot != null ? ReadSvgContent(packageRoot, kebab) : null;
+            cancellationToken.ThrowIfCancellationRequested();
+            string kebab = CaseUtil.ToKebab(iconName);
+            string? svgContent = resourcesDir != null ? await ReadSvgContent(resourcesDir, kebab, cancellationToken).NoSync() : null;
             if (svgContent != null)
             {
                 string escaped = EscapeForCSharpString(svgContent);
@@ -246,7 +203,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
 
     private static string GenerateLucideIconSvgProvider()
     {
-        var sb = new StringBuilder();
+        using var sb = new PooledStringBuilder();
         sb.AppendLine("// <auto-generated/>");
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
@@ -267,7 +224,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
 
     private static string GenerateLucideIconServiceCollectionExtensions()
     {
-        var sb = new StringBuilder();
+        using var sb = new PooledStringBuilder();
         sb.AppendLine("// <auto-generated/>");
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
