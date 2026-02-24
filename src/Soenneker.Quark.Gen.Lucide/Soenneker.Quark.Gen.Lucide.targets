@@ -8,14 +8,20 @@
         <LucideGeneratorBuildEnabled Condition="'$(LucideGeneratorBuildEnabled)'==''">true</LucideGeneratorBuildEnabled>
         <!-- Use MSBuildProjectDirectory (project folder) for reliable scanning of .cs/.razor files. -->
         <_LucideProjectDir>$(MSBuildProjectDirectory)</_LucideProjectDir>
-        <LucideSvgMapOutput Condition="'$(LucideSvgMapOutput)' == ''">$(IntermediateOutputPath)Generated\LucideIconSvgMap.g.cs</LucideSvgMapOutput>
-        <_LucideOutputArg Condition="'$(LucideSvgMapOutput)' != ''"> --output &quot;$(LucideSvgMapOutput)&quot;</_LucideOutputArg>
+        <!-- LucideSvgMapOutput and _LucideOutputArg are set in ResolveLucideBuildTasksPath so $(IntermediateOutputPath) is available. -->
         <_LucidePackagesArg Condition="'$(RestorePackagesPath)' != ''"> --packagesPath &quot;$(RestorePackagesPath)&quot;</_LucidePackagesArg>
         <_LucidePackagesArg Condition="'$(_LucidePackagesArg)' == '' and '$(NuGetPackageRoot)' != ''"> --packagesPath &quot;$(NuGetPackageRoot)&quot;</_LucidePackagesArg>
     </PropertyGroup>
 
-    <!-- Resolve BuildTasksDllPath at target execution time (after BuildTasks has been built), not at load time. -->
+    <!-- Resolve BuildTasksDllPath and output paths at target execution time (IntermediateOutputPath is not set when this .targets file is loaded). -->
     <Target Name="ResolveLucideBuildTasksPath" BeforeTargets="RunLucideGeneratorBuildTasks">
+        <PropertyGroup>
+            <!-- Output paths: set at execution time so $(IntermediateOutputPath) is defined by the SDK. -->
+            <LucideSvgMapOutput Condition="'$(LucideSvgMapOutput)' == ''">$(IntermediateOutputPath)Generated\LucideIconSvgMap.g.cs</LucideSvgMapOutput>
+            <LucideSvgProviderOutput Condition="'$(LucideSvgProviderOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconSvgProvider.g.cs'))</LucideSvgProviderOutput>
+            <LucideServiceCollectionExtensionsOutput Condition="'$(LucideServiceCollectionExtensionsOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconServiceCollectionExtensions.g.cs'))</LucideServiceCollectionExtensionsOutput>
+            <_LucideOutputArg> --output &quot;$(LucideSvgMapOutput)&quot;</_LucideOutputArg>
+        </PropertyGroup>
         <PropertyGroup Condition="'$(BuildTasksDllPath)' == ''">
             <!-- Preferred: DLL next to .targets in build\ (NuGet package with flat pack). -->
             <_LucideBuildTasksCandidate Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
@@ -50,10 +56,7 @@
               Command='dotnet exec &quot;$(BuildTasksDllPath)&quot; --projectDir &quot;$(_LucideProjectDir)&quot;$(_LucideOutputArg)$(_LucidePackagesArg)' />
     </Target>
 
-    <PropertyGroup>
-        <LucideSvgProviderOutput Condition="'$(LucideSvgProviderOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconSvgProvider.g.cs'))</LucideSvgProviderOutput>
-        <LucideServiceCollectionExtensionsOutput Condition="'$(LucideServiceCollectionExtensionsOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconServiceCollectionExtensions.g.cs'))</LucideServiceCollectionExtensionsOutput>
-    </PropertyGroup>
+    <!-- LucideSvgProviderOutput and LucideServiceCollectionExtensionsOutput are set in ResolveLucideBuildTasksPath. -->
 
     <Target Name="IncludeGeneratedLucideIconSvgMap" AfterTargets="RunLucideGeneratorBuildTasks">
         <ItemGroup Condition="Exists('$(LucideSvgMapOutput)')">
