@@ -85,7 +85,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
 
         if (outputDir.HasContent())
         {
-            await _directoryUtil.CreateIfDoesNotExist(outputDir, true, cancellationToken).NoSync();
+            await _directoryUtil.Create(outputDir, true, cancellationToken).NoSync();
         }
 
         await _fileUtil.Write(outputPath, content, log: true, cancellationToken).NoSync();
