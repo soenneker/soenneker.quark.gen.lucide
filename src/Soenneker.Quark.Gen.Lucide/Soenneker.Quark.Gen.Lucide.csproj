@@ -63,7 +63,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Soenneker.Quark.Gen.Lucide.Abstractions" Version="4.0.3" />
+        <PackageReference Include="Soenneker.Quark.Gen.Lucide.Abstractions" Version="4.0.6" />
     </ItemGroup>
 
     <!-- When consumed via ProjectReference, BuildTasks must exist so RunLucideGeneratorBuildTasks can run. -->
