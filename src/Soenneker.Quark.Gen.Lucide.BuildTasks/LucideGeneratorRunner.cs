@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Soenneker.Extensions.String;
 using Soenneker.Extensions.Task;
-using Soenneker.Extensions.ValueTask;
 using Soenneker.Quark.Gen.Lucide.BuildTasks.Abstract;
 using Soenneker.Utils.Case;
 using Soenneker.Utils.Directory.Abstract;
@@ -43,14 +42,14 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
 
         if (!map.TryGetValue("--projectDir", out string? projectDir) || projectDir.IsNullOrWhiteSpace())
         {
-            return await Fail("Missing required --projectDir");
+            return Fail("Missing required --projectDir");
         }
 
         projectDir = Path.GetFullPath(projectDir.Trim().Trim('"'));
 
         if (!await _directoryUtil.Exists(projectDir, cancellationToken).NoSync())
         {
-            return await Fail($"Project directory does not exist: {projectDir}");
+            return Fail($"Project directory does not exist: {projectDir}");
         }
 
         string outputPath = map.TryGetValue("--output", out string? outVal) && outVal.HasContent()
@@ -274,10 +273,9 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         return map;
     }
 
-    private static async ValueTask<int> Fail(string message)
+    private static int Fail(string message)
     {
-        var line = $"Soenneker.Quark.Gen.Lucide.BuildTasks: {message}";
-        await Console.Error.WriteLineAsync(line);
+        Console.Error.WriteLine($"Soenneker.Quark.Gen.Lucide.BuildTasks: {message}");
         return 1;
     }
 }
