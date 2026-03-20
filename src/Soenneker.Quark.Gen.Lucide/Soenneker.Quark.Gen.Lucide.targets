@@ -21,37 +21,43 @@
             <_LucidePackagesRoot Condition="'$(RestorePackagesPath)' != ''">$(RestorePackagesPath)</_LucidePackagesRoot>
             <_LucidePackagesRoot Condition="'$(_LucidePackagesRoot)' == '' and '$(NuGetPackageRoot)' != ''">$(NuGetPackageRoot)</_LucidePackagesRoot>
             <_LucideIconsPackageResources Condition="'$(_LucidePackagesRoot)' != '' and '$(_LucideIconsVersion)' != ''">$([System.IO.Path]::Combine('$(_LucidePackagesRoot)', 'soenneker.lucide.icons', '$(_LucideIconsVersion)', 'contentFiles', 'any', 'any', 'Resources'))</_LucideIconsPackageResources>
+            <_LucideResourcesOutputDir>$([System.IO.Path]::Combine('$(OutputPath)', 'Resources'))</_LucideResourcesOutputDir>
+            <_LucideIconsPackageResourcesGlob>$(_LucideIconsPackageResources)/*.svg</_LucideIconsPackageResourcesGlob>
         </PropertyGroup>
         <ItemGroup Condition="Exists('$(_LucideIconsPackageResources)')">
-            <LucideIconSvgFiles Include="$(_LucideIconsPackageResources)\*.svg" />
+            <LucideIconSvgFiles Include="$(_LucideIconsPackageResourcesGlob)" />
         </ItemGroup>
-        <MakeDir Directories="$(OutputPath)Resources" Condition="Exists('$(_LucideIconsPackageResources)')" />
-        <Copy SourceFiles="@(LucideIconSvgFiles)" DestinationFolder="$(OutputPath)Resources" SkipUnchangedFiles="true" Condition="Exists('$(_LucideIconsPackageResources)')" />
+        <MakeDir Directories="$(_LucideResourcesOutputDir)" Condition="Exists('$(_LucideIconsPackageResources)')" />
+        <Copy SourceFiles="@(LucideIconSvgFiles)" DestinationFolder="$(_LucideResourcesOutputDir)" SkipUnchangedFiles="true" Condition="Exists('$(_LucideIconsPackageResources)')" />
     </Target>
 
     <!-- Resolve LucideBuildTasksDllPath and output paths at target execution time (IntermediateOutputPath is not set when this .targets file is loaded). Package-scoped property names avoid collisions when multiple Soenneker.Quark.Gen.* packages are referenced. -->
     <Target Name="ResolveLucideBuildTasksPath" BeforeTargets="RunLucideGeneratorBuildTasks">
         <PropertyGroup>
             <!-- Output paths: set at execution time so $(IntermediateOutputPath) is defined by the SDK. -->
-            <LucideSvgMapOutput Condition="'$(LucideSvgMapOutput)' == ''">$(IntermediateOutputPath)Generated\LucideIconSvgMap.g.cs</LucideSvgMapOutput>
+            <LucideSvgMapOutput Condition="'$(LucideSvgMapOutput)' == ''">$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'Generated', 'LucideIconSvgMap.g.cs'))</LucideSvgMapOutput>
             <LucideSvgProviderOutput Condition="'$(LucideSvgProviderOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconSvgProvider.g.cs'))</LucideSvgProviderOutput>
             <LucideServiceCollectionExtensionsOutput Condition="'$(LucideServiceCollectionExtensionsOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconServiceCollectionExtensions.g.cs'))</LucideServiceCollectionExtensionsOutput>
             <_LucideOutputArg> --output &quot;$(LucideSvgMapOutput)&quot;</_LucideOutputArg>
             <!-- Generator reads SVGs from build directory / Resources. -->
             <_LucideResourcesArg Condition="'$(LucideIconsResourcesPath)' != ''"> --resourcesPath &quot;$(LucideIconsResourcesPath)&quot;</_LucideResourcesArg>
-            <_LucideResourcesArg Condition="'$(_LucideResourcesArg)' == ''"> --resourcesPath &quot;$(OutputPath)Resources&quot;</_LucideResourcesArg>
+            <_LucideResourcesArg Condition="'$(_LucideResourcesArg)' == ''"> --resourcesPath &quot;$([System.IO.Path]::Combine('$(OutputPath)', 'Resources'))&quot;</_LucideResourcesArg>
         </PropertyGroup>
         <PropertyGroup Condition="'$(LucideBuildTasksDllPath)' == ''">
             <!-- Preferred: DLL next to .targets in build\ (NuGet package with flat pack). -->
-            <_LucideBuildTasksCandidate Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
+            <_LucideBuildTasksCandidateFromPackage>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'Soenneker.Quark.Gen.Lucide.BuildTasks.dll'))</_LucideBuildTasksCandidateFromPackage>
             <!-- buildTransitive flat (legacy). -->
-            <_LucideBuildTasksCandidate Condition="'$(_LucideBuildTasksCandidate)' == '' and Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\buildTransitive\Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
+            <_LucideBuildTasksCandidateFromBuildTransitive>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'buildTransitive', 'Soenneker.Quark.Gen.Lucide.BuildTasks.dll'))))</_LucideBuildTasksCandidateFromBuildTransitive>
             <!-- buildTransitive with Configuration subdir (older 4.x packages used %(RecursiveDir)). -->
-            <_LucideBuildTasksCandidate Condition="'$(_LucideBuildTasksCandidate)' == '' and Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Release\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\buildTransitive\Release\Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
-            <_LucideBuildTasksCandidate Condition="'$(_LucideBuildTasksCandidate)' == '' and Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Debug\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\buildTransitive\Debug\Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
+            <_LucideBuildTasksCandidateFromBuildTransitiveRelease>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'buildTransitive', 'Release', 'Soenneker.Quark.Gen.Lucide.BuildTasks.dll'))))</_LucideBuildTasksCandidateFromBuildTransitiveRelease>
+            <_LucideBuildTasksCandidateFromBuildTransitiveDebug>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'buildTransitive', 'Debug', 'Soenneker.Quark.Gen.Lucide.BuildTasks.dll'))))</_LucideBuildTasksCandidateFromBuildTransitiveDebug>
             <!-- ProjectReference / local dev. -->
-            <_LucideBuildTasksCandidate Condition="'$(_LucideBuildTasksCandidate)' == '' and Exists('$(MSBuildThisFileDirectory)..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
-            <LucideBuildTasksDllPath Condition="'$(_LucideBuildTasksCandidate)' != ''">$(_LucideBuildTasksCandidate)</LucideBuildTasksDllPath>
+            <_LucideBuildTasksCandidateFromProject>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'Soenneker.Quark.Gen.Lucide.BuildTasks', 'bin', '$(Configuration)', 'Soenneker.Quark.Gen.Lucide.BuildTasks.dll'))))</_LucideBuildTasksCandidateFromProject>
+            <LucideBuildTasksDllPath Condition="Exists('$(_LucideBuildTasksCandidateFromPackage)')">$(_LucideBuildTasksCandidateFromPackage)</LucideBuildTasksDllPath>
+            <LucideBuildTasksDllPath Condition="'$(LucideBuildTasksDllPath)' == '' and Exists('$(_LucideBuildTasksCandidateFromBuildTransitive)')">$(_LucideBuildTasksCandidateFromBuildTransitive)</LucideBuildTasksDllPath>
+            <LucideBuildTasksDllPath Condition="'$(LucideBuildTasksDllPath)' == '' and Exists('$(_LucideBuildTasksCandidateFromBuildTransitiveRelease)')">$(_LucideBuildTasksCandidateFromBuildTransitiveRelease)</LucideBuildTasksDllPath>
+            <LucideBuildTasksDllPath Condition="'$(LucideBuildTasksDllPath)' == '' and Exists('$(_LucideBuildTasksCandidateFromBuildTransitiveDebug)')">$(_LucideBuildTasksCandidateFromBuildTransitiveDebug)</LucideBuildTasksDllPath>
+            <LucideBuildTasksDllPath Condition="'$(LucideBuildTasksDllPath)' == '' and Exists('$(_LucideBuildTasksCandidateFromProject)')">$(_LucideBuildTasksCandidateFromProject)</LucideBuildTasksDllPath>
         </PropertyGroup>
     </Target>
 
