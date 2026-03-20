@@ -57,6 +57,9 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
             ? Path.GetFullPath(outVal.Trim().Trim('"'))
             : Path.Combine(projectDir, "obj", "Generated", "LucideIconSvgMap.g.cs");
 
+        _logger.LogInformation("Starting Lucide icon generation for project {ProjectDir}.", projectDir);
+        _logger.LogInformation("Collecting Lucide icon usages from project sources...");
+
         HashSet<string> icons = await CollectIconsFromProject(projectDir, cancellationToken).NoSync();
         if (icons.Count == 0)
         {
@@ -75,31 +78,39 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
             resourcesDir = Path.Combine(projectDir, "Resources");
         }
 
+        _logger.LogInformation("Generating Lucide outputs using resources at {ResourcesDir}.", resourcesDir);
+
         if (!await _directoryUtil.Exists(resourcesDir, cancellationToken).NoSync())
         {
             _logger.LogWarning("Lucide Resources directory does not exist: {Path}. LucideIconSvgMap will have no SVG content.", resourcesDir);
         }
 
+        _logger.LogInformation("Generating LucideIconSvgMap for {Count} icons.", icons.Count);
         string content = await GenerateLucideIconSvgMap(icons, resourcesDir, cancellationToken).NoSync();
         string? outputDir = Path.GetDirectoryName(outputPath);
 
         if (outputDir.HasContent())
         {
+            _logger.LogInformation("Ensuring output directory exists at {OutputDir}.", outputDir);
             await _directoryUtil.Create(outputDir, true, cancellationToken).NoSync();
         }
 
+        _logger.LogInformation("Writing LucideIconSvgMap to {OutputPath}.", outputPath);
         await _fileUtil.Write(outputPath, content, log: true, cancellationToken).NoSync();
         _logger.LogInformation("Generated {Output} with {Count} icons.", outputPath, icons.Count);
 
         string providerPath = Path.Combine(outputDir ?? _directoryUtil.GetWorkingDirectory(), "LucideIconSvgProvider.g.cs");
         string providerContent = GenerateLucideIconSvgProvider();
+        _logger.LogInformation("Writing LucideIconSvgProvider to {ProviderPath}.", providerPath);
         await _fileUtil.Write(providerPath, providerContent, log: true, cancellationToken).NoSync();
         _logger.LogInformation("Generated {ProviderPath}.", providerPath);
 
         string extensionsPath = Path.Combine(outputDir ?? _directoryUtil.GetWorkingDirectory(), "LucideIconServiceCollectionExtensions.g.cs");
         string extensionsContent = GenerateLucideIconServiceCollectionExtensions();
+        _logger.LogInformation("Writing LucideIconServiceCollectionExtensions to {ExtensionsPath}.", extensionsPath);
         await _fileUtil.Write(extensionsPath, extensionsContent, log: true, cancellationToken).NoSync();
         _logger.LogInformation("Generated {ExtensionsPath}.", extensionsPath);
+        _logger.LogInformation("Completed Lucide icon generation for project {ProjectDir}.", projectDir);
 
         return 0;
     }
