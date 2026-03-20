@@ -29,7 +29,7 @@
         <Copy SourceFiles="@(LucideIconSvgFiles)" DestinationFolder="$(OutputPath)Resources" SkipUnchangedFiles="true" Condition="Exists('$(_LucideIconsPackageResources)')" />
     </Target>
 
-    <!-- Resolve BuildTasksDllPath and output paths at target execution time (IntermediateOutputPath is not set when this .targets file is loaded). -->
+    <!-- Resolve LucideBuildTasksDllPath and output paths at target execution time (IntermediateOutputPath is not set when this .targets file is loaded). Package-scoped property names avoid collisions when multiple Soenneker.Quark.Gen.* packages are referenced. -->
     <Target Name="ResolveLucideBuildTasksPath" BeforeTargets="RunLucideGeneratorBuildTasks">
         <PropertyGroup>
             <!-- Output paths: set at execution time so $(IntermediateOutputPath) is defined by the SDK. -->
@@ -41,7 +41,7 @@
             <_LucideResourcesArg Condition="'$(LucideIconsResourcesPath)' != ''"> --resourcesPath &quot;$(LucideIconsResourcesPath)&quot;</_LucideResourcesArg>
             <_LucideResourcesArg Condition="'$(_LucideResourcesArg)' == ''"> --resourcesPath &quot;$(OutputPath)Resources&quot;</_LucideResourcesArg>
         </PropertyGroup>
-        <PropertyGroup Condition="'$(BuildTasksDllPath)' == ''">
+        <PropertyGroup Condition="'$(LucideBuildTasksDllPath)' == ''">
             <!-- Preferred: DLL next to .targets in build\ (NuGet package with flat pack). -->
             <_LucideBuildTasksCandidate Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
             <!-- buildTransitive flat (legacy). -->
@@ -51,7 +51,7 @@
             <_LucideBuildTasksCandidate Condition="'$(_LucideBuildTasksCandidate)' == '' and Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Debug\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\buildTransitive\Debug\Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
             <!-- ProjectReference / local dev. -->
             <_LucideBuildTasksCandidate Condition="'$(_LucideBuildTasksCandidate)' == '' and Exists('$(MSBuildThisFileDirectory)..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Lucide.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\Soenneker.Quark.Gen.Lucide.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Lucide.BuildTasks.dll</_LucideBuildTasksCandidate>
-            <BuildTasksDllPath Condition="'$(_LucideBuildTasksCandidate)' != ''">$(_LucideBuildTasksCandidate)</BuildTasksDllPath>
+            <LucideBuildTasksDllPath Condition="'$(_LucideBuildTasksCandidate)' != ''">$(_LucideBuildTasksCandidate)</LucideBuildTasksDllPath>
         </PropertyGroup>
     </Target>
 
@@ -62,17 +62,17 @@
         <Message Importance="high" Text="Running Soenneker.Quark.Gen.Lucide BuildTasks: projectDir=$(_LucideProjectDir)" />
         <Error Condition="'$(_LucideProjectDir)' == ''"
                Text="Soenneker.Quark.Gen.Lucide: project directory could not be resolved. Set LucideProjectDir or build a project that has a valid project directory." />
-        <Error Condition="'$(BuildTasksDllPath)'==''"
-               Text="BuildTasksDllPath was not resolved. MSBuildThisFileDirectory=$(MSBuildThisFileDirectory)" />
-        <Error Condition="!Exists('$(BuildTasksDllPath)')"
-               Text="BuildTasks DLL not found at '$(BuildTasksDllPath)'." />
+        <Error Condition="'$(LucideBuildTasksDllPath)'==''"
+               Text="LucideBuildTasksDllPath was not resolved. MSBuildThisFileDirectory=$(MSBuildThisFileDirectory)" />
+        <Error Condition="!Exists('$(LucideBuildTasksDllPath)')"
+               Text="Lucide BuildTasks DLL not found at '$(LucideBuildTasksDllPath)'." />
 
         <Exec WorkingDirectory="$(_LucideProjectDir)"
               IgnoreExitCode="false"
               ConsoleToMSBuild="true"
               StandardOutputImportance="high"
               StandardErrorImportance="high"
-              Command='dotnet exec &quot;$(BuildTasksDllPath)&quot; --projectDir &quot;$(_LucideProjectDir)&quot;$(_LucideOutputArg)$(_LucideResourcesArg)' />
+              Command='dotnet exec &quot;$(LucideBuildTasksDllPath)&quot; --projectDir &quot;$(_LucideProjectDir)&quot;$(_LucideOutputArg)$(_LucideResourcesArg)' />
     </Target>
 
     <!-- LucideSvgProviderOutput and LucideServiceCollectionExtensionsOutput are set in ResolveLucideBuildTasksPath. -->
