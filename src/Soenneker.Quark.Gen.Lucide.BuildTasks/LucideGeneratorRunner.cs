@@ -41,19 +41,19 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         string[] args = Environment.GetCommandLineArgs();
         Dictionary<string, string> map = ParseArgs(args);
 
-        if (!map.TryGetValue("--projectDir", out string? projectDir) || string.IsNullOrWhiteSpace(projectDir))
+        if (!map.TryGetValue("--projectDir", out string? projectDir) || projectDir.IsNullOrWhiteSpace())
         {
-            return Fail("Missing required --projectDir");
+            return await Fail("Missing required --projectDir");
         }
 
         projectDir = Path.GetFullPath(projectDir.Trim().Trim('"'));
 
         if (!await _directoryUtil.Exists(projectDir, cancellationToken).NoSync())
         {
-            return Fail($"Project directory does not exist: {projectDir}");
+            return await Fail($"Project directory does not exist: {projectDir}");
         }
 
-        string outputPath = map.TryGetValue("--output", out string? outVal) && !string.IsNullOrWhiteSpace(outVal)
+        string outputPath = map.TryGetValue("--output", out string? outVal) && outVal.HasContent()
             ? Path.GetFullPath(outVal.Trim().Trim('"'))
             : Path.Combine(projectDir, "obj", "Generated", "LucideIconSvgMap.g.cs");
 
@@ -274,10 +274,10 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         return map;
     }
 
-    private static int Fail(string message)
+    private static async ValueTask<int> Fail(string message)
     {
         var line = $"Soenneker.Quark.Gen.Lucide.BuildTasks: {message}";
-        Console.Error.WriteLine(line);
+        await Console.Error.WriteLineAsync(line);
         return 1;
     }
 }
