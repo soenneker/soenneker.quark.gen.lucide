@@ -8,12 +8,13 @@
         <LucideGeneratorBuildEnabled Condition="'$(LucideGeneratorBuildEnabled)'==''">true</LucideGeneratorBuildEnabled>
         <LucideIncludeSvgProvider Condition="'$(LucideIncludeSvgProvider)'==''">true</LucideIncludeSvgProvider>
         <LucideIncludeServiceCollectionExtensions Condition="'$(LucideIncludeServiceCollectionExtensions)'==''">true</LucideIncludeServiceCollectionExtensions>
-        <!-- Use MSBuildProjectDirectory (project folder) for reliable scanning of .cs/.razor files. -->
-        <_LucideProjectDir>$(MSBuildProjectDirectory)</_LucideProjectDir>
+        <!-- ProjectDir with no trailing backslash for reliable Exec quoting. Fallback to MSBuildProjectDirectory when ProjectDir is empty. -->
+        <_LucideProjectDir>$([System.IO.Path]::GetDirectoryName('$(ProjectDir)x'))</_LucideProjectDir>
+        <_LucideProjectDir Condition="'$(_LucideProjectDir)' == ''">$(MSBuildProjectDirectory)</_LucideProjectDir>
         <!-- LucideSvgMapOutput and _LucideOutputArg are set in ResolveLucideBuildTasksPath so $(IntermediateOutputPath) is available. -->
     </PropertyGroup>
 
-    <!-- Copy Soenneker.Lucide.Icons SVGs to $(OutputPath)Resources so the generator just reads from there. -->
+    <!-- Copy Soenneker.Lucide.Icons SVGs to $(IntermediateOutputPath)Resources so the generator reads from a transient build cache. -->
     <Target Name="CopyLucideIconsToBuildResources" BeforeTargets="ResolveLucideBuildTasksPath" Condition="'$(DesignTimeBuild)'!='true'">
         <ItemGroup>
             <_LucideIconsPkgRef Include="@(PackageReference)" Condition="'%(Identity)' == 'Soenneker.Lucide.Icons'" />
@@ -23,7 +24,7 @@
             <_LucidePackagesRoot Condition="'$(RestorePackagesPath)' != ''">$(RestorePackagesPath)</_LucidePackagesRoot>
             <_LucidePackagesRoot Condition="'$(_LucidePackagesRoot)' == '' and '$(NuGetPackageRoot)' != ''">$(NuGetPackageRoot)</_LucidePackagesRoot>
             <_LucideIconsPackageResources Condition="'$(_LucidePackagesRoot)' != '' and '$(_LucideIconsVersion)' != ''">$([System.IO.Path]::Combine('$(_LucidePackagesRoot)', 'soenneker.lucide.icons', '$(_LucideIconsVersion)', 'contentFiles', 'any', 'any', 'Resources'))</_LucideIconsPackageResources>
-            <_LucideResourcesOutputDir>$([System.IO.Path]::Combine('$(OutputPath)', 'Resources'))</_LucideResourcesOutputDir>
+            <_LucideResourcesOutputDir>$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'Resources'))</_LucideResourcesOutputDir>
             <_LucideIconsPackageResourcesGlob>$(_LucideIconsPackageResources)/*.svg</_LucideIconsPackageResourcesGlob>
         </PropertyGroup>
         <ItemGroup Condition="Exists('$(_LucideIconsPackageResources)')">
@@ -34,16 +35,16 @@
     </Target>
 
     <!-- Resolve LucideBuildTasksDllPath and output paths at target execution time (IntermediateOutputPath is not set when this .targets file is loaded). Package-scoped property names avoid collisions when multiple Soenneker.Quark.Gen.* packages are referenced. -->
-    <Target Name="ResolveLucideBuildTasksPath" BeforeTargets="RunLucideGeneratorBuildTasks">
+    <Target Name="ResolveLucideBuildTasksPath" BeforeTargets="RunLucideGeneratorBuildTasks;IncludeGeneratedLucideSources;IncludeGeneratedLucideSourcesDesignTime">
         <PropertyGroup>
             <!-- Output paths: set at execution time so $(IntermediateOutputPath) is defined by the SDK. -->
             <LucideSvgMapOutput Condition="'$(LucideSvgMapOutput)' == ''">$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'Generated', 'LucideIconSvgMap.g.cs'))</LucideSvgMapOutput>
             <LucideSvgProviderOutput Condition="'$(LucideSvgProviderOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconSvgProvider.g.cs'))</LucideSvgProviderOutput>
             <LucideServiceCollectionExtensionsOutput Condition="'$(LucideServiceCollectionExtensionsOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconServiceCollectionExtensions.g.cs'))</LucideServiceCollectionExtensionsOutput>
             <_LucideOutputArg> --output &quot;$(LucideSvgMapOutput)&quot;</_LucideOutputArg>
-            <!-- Generator reads SVGs from build directory / Resources. -->
+            <!-- Generator reads SVGs from the intermediate build cache unless explicitly overridden. -->
             <_LucideResourcesArg Condition="'$(LucideIconsResourcesPath)' != ''"> --resourcesPath &quot;$(LucideIconsResourcesPath)&quot;</_LucideResourcesArg>
-            <_LucideResourcesArg Condition="'$(_LucideResourcesArg)' == ''"> --resourcesPath &quot;$([System.IO.Path]::Combine('$(OutputPath)', 'Resources'))&quot;</_LucideResourcesArg>
+            <_LucideResourcesArg Condition="'$(_LucideResourcesArg)' == ''"> --resourcesPath &quot;$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'Resources'))&quot;</_LucideResourcesArg>
         </PropertyGroup>
         <PropertyGroup Condition="'$(LucideBuildTasksDllPath)' == ''">
             <!-- Preferred: DLL next to .targets in build\ (NuGet package with flat pack). -->
@@ -91,6 +92,26 @@
             Condition="'$(DesignTimeBuild)'!='true' and '$(IsCrossTargetingBuild)'!='true' and '$(LucideGeneratorBuildEnabled)'=='true'">
         <ItemGroup Condition="Exists('$(LucideSvgMapOutput)')">
             <!-- Remove first to avoid CS2002 when the file is already included (e.g. under CompilerGeneratedFilesOutputPath or default glob). -->
+            <Compile Remove="$(LucideSvgMapOutput)" />
+            <Compile Include="$(LucideSvgMapOutput)" />
+        </ItemGroup>
+
+        <ItemGroup Condition="'$(LucideIncludeSvgProvider)'=='true' and Exists('$(LucideSvgProviderOutput)')">
+            <Compile Remove="$(LucideSvgProviderOutput)" />
+            <Compile Include="$(LucideSvgProviderOutput)" />
+        </ItemGroup>
+
+        <ItemGroup Condition="'$(LucideIncludeServiceCollectionExtensions)'=='true' and Exists('$(LucideServiceCollectionExtensionsOutput)')">
+            <Compile Remove="$(LucideServiceCollectionExtensionsOutput)" />
+            <Compile Include="$(LucideServiceCollectionExtensionsOutput)" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Design-time builds should not run the generator, but they can still compile previously generated files to restore IntelliSense after a full build. -->
+    <Target Name="IncludeGeneratedLucideSourcesDesignTime"
+            BeforeTargets="XamlPreCompile;BeforeCompile;CoreCompile"
+            Condition="'$(DesignTimeBuild)'=='true' and '$(IsCrossTargetingBuild)'!='true' and '$(LucideGeneratorBuildEnabled)'=='true'">
+        <ItemGroup Condition="Exists('$(LucideSvgMapOutput)')">
             <Compile Remove="$(LucideSvgMapOutput)" />
             <Compile Include="$(LucideSvgMapOutput)" />
         </ItemGroup>
