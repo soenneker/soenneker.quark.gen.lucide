@@ -64,7 +64,7 @@
     </Target>
 
     <Target Name="RunLucideGeneratorBuildTasks"
-            BeforeTargets="BeforeCompile;CoreCompile"
+            BeforeTargets="XamlPreCompile;BeforeCompile;CoreCompile"
             Condition="'$(DesignTimeBuild)'!='true' and '$(IsCrossTargetingBuild)'!='true' and '$(LucideGeneratorBuildEnabled)'=='true'">
 
         <Message Importance="high" Text="Running Soenneker.Quark.Gen.Lucide BuildTasks: projectDir=$(_LucideProjectDir)" />
@@ -86,7 +86,7 @@
     <!-- LucideSvgProviderOutput and LucideServiceCollectionExtensionsOutput are set in ResolveLucideBuildTasksPath. -->
     <!-- Bind source inclusion directly to the general compile hooks so inner builds (for example MAUI Windows RID builds) always see the generated files. -->
     <Target Name="IncludeGeneratedLucideSources"
-            BeforeTargets="BeforeCompile;CoreCompile"
+            BeforeTargets="XamlPreCompile;BeforeCompile;CoreCompile"
             DependsOnTargets="RunLucideGeneratorBuildTasks"
             Condition="'$(DesignTimeBuild)'!='true' and '$(IsCrossTargetingBuild)'!='true' and '$(LucideGeneratorBuildEnabled)'=='true'">
         <ItemGroup Condition="Exists('$(LucideSvgMapOutput)')">
