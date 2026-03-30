@@ -6,6 +6,8 @@
 
     <PropertyGroup>
         <LucideGeneratorBuildEnabled Condition="'$(LucideGeneratorBuildEnabled)'==''">true</LucideGeneratorBuildEnabled>
+        <LucideIncludeSvgProvider Condition="'$(LucideIncludeSvgProvider)'==''">true</LucideIncludeSvgProvider>
+        <LucideIncludeServiceCollectionExtensions Condition="'$(LucideIncludeServiceCollectionExtensions)'==''">true</LucideIncludeServiceCollectionExtensions>
         <!-- Use MSBuildProjectDirectory (project folder) for reliable scanning of .cs/.razor files. -->
         <_LucideProjectDir>$(MSBuildProjectDirectory)</_LucideProjectDir>
         <!-- LucideSvgMapOutput and _LucideOutputArg are set in ResolveLucideBuildTasksPath so $(IntermediateOutputPath) is available. -->
@@ -91,14 +93,14 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="IncludeGeneratedLucideIconSvgProvider" AfterTargets="RunLucideGeneratorBuildTasks">
+    <Target Name="IncludeGeneratedLucideIconSvgProvider" AfterTargets="RunLucideGeneratorBuildTasks" Condition="'$(LucideIncludeSvgProvider)'=='true'">
         <ItemGroup Condition="Exists('$(LucideSvgProviderOutput)')">
             <Compile Remove="$(LucideSvgProviderOutput)" />
             <Compile Include="$(LucideSvgProviderOutput)" />
         </ItemGroup>
     </Target>
 
-    <Target Name="IncludeGeneratedLucideIconServiceCollectionExtensions" AfterTargets="RunLucideGeneratorBuildTasks">
+    <Target Name="IncludeGeneratedLucideIconServiceCollectionExtensions" AfterTargets="RunLucideGeneratorBuildTasks" Condition="'$(LucideIncludeServiceCollectionExtensions)'=='true'">
         <ItemGroup Condition="Exists('$(LucideServiceCollectionExtensionsOutput)')">
             <Compile Remove="$(LucideServiceCollectionExtensionsOutput)" />
             <Compile Include="$(LucideServiceCollectionExtensionsOutput)" />

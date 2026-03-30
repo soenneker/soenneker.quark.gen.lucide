@@ -63,8 +63,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         HashSet<string> icons = await CollectIconsFromProject(projectDir, cancellationToken).NoSync();
         if (icons.Count == 0)
         {
-            _logger.LogInformation("No LucideIcon usages found. Skipping LucideIconSvgMap generation.");
-            return 0;
+            _logger.LogInformation("No LucideIcon usages found. Generating empty Lucide outputs so DI registration remains available.");
         }
 
         // SVGs live in build directory / Resources (e.g. $(OutputPath)Resources). Use explicit path if provided, else projectDir/Resources.
@@ -183,7 +182,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         sb.AppendLine("/// <summary>");
         sb.AppendLine("/// Maps Lucide icon names (PascalCase) to SVG content from Soenneker.Lucide.Icons.");
         sb.AppendLine("/// </summary>");
-        sb.AppendLine("public static partial class LucideIconSvgMap");
+        sb.AppendLine("internal static partial class LucideIconSvgMap");
         sb.AppendLine("{");
         sb.AppendLine("    /// <summary>");
         sb.AppendLine("    /// Returns the SVG markup for the given Lucide icon name, or null if not found.");
@@ -225,7 +224,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         sb.AppendLine("/// <summary>");
         sb.AppendLine("/// Implements <see cref=\"ILucideIconSvgProvider\"/> using the generated <see cref=\"LucideIconSvgMap\"/>.");
         sb.AppendLine("/// </summary>");
-        sb.AppendLine("public sealed class LucideIconSvgProvider : ILucideIconSvgProvider");
+        sb.AppendLine("internal sealed class LucideIconSvgProvider : ILucideIconSvgProvider");
         sb.AppendLine("{");
         sb.AppendLine("    /// <inheritdoc />");
         sb.AppendLine("    public string? GetSvg(string iconName) => LucideIconSvgMap.GetSvg(iconName);");
@@ -240,6 +239,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
         sb.AppendLine("using Microsoft.Extensions.DependencyInjection;");
+        sb.AppendLine("using Microsoft.Extensions.DependencyInjection.Extensions;");
         sb.AppendLine("using Soenneker.Quark.Gen.Lucide.Abstractions;");
         sb.AppendLine();
         sb.AppendLine("namespace Soenneker.Quark.Gen.Lucide.Generated;");
@@ -254,7 +254,8 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         sb.AppendLine("    /// </summary>");
         sb.AppendLine("    public static IServiceCollection AddLucideIconsAsScoped(this IServiceCollection services)");
         sb.AppendLine("    {");
-        sb.AppendLine("        return services.AddScoped<ILucideIconSvgProvider, LucideIconSvgProvider>();");
+        sb.AppendLine("        services.TryAddScoped<ILucideIconSvgProvider, LucideIconSvgProvider>();");
+        sb.AppendLine("        return services;");
         sb.AppendLine("    }");
         sb.AppendLine("}");
         return sb.ToString();
