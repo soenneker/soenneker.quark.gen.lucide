@@ -64,7 +64,7 @@
     </Target>
 
     <Target Name="RunLucideGeneratorBuildTasks"
-            BeforeTargets="CoreCompile"
+            BeforeTargets="BeforeCompile;CoreCompile"
             Condition="'$(DesignTimeBuild)'!='true' and '$(IsCrossTargetingBuild)'!='true' and '$(LucideGeneratorBuildEnabled)'=='true'">
 
         <Message Importance="high" Text="Running Soenneker.Quark.Gen.Lucide BuildTasks: projectDir=$(_LucideProjectDir)" />
@@ -84,24 +84,23 @@
     </Target>
 
     <!-- LucideSvgProviderOutput and LucideServiceCollectionExtensionsOutput are set in ResolveLucideBuildTasksPath. -->
-
-    <Target Name="IncludeGeneratedLucideIconSvgMap" AfterTargets="RunLucideGeneratorBuildTasks">
+    <!-- Bind source inclusion directly to the general compile hooks so inner builds (for example MAUI Windows RID builds) always see the generated files. -->
+    <Target Name="IncludeGeneratedLucideSources"
+            BeforeTargets="BeforeCompile;CoreCompile"
+            DependsOnTargets="RunLucideGeneratorBuildTasks"
+            Condition="'$(DesignTimeBuild)'!='true' and '$(IsCrossTargetingBuild)'!='true' and '$(LucideGeneratorBuildEnabled)'=='true'">
         <ItemGroup Condition="Exists('$(LucideSvgMapOutput)')">
             <!-- Remove first to avoid CS2002 when the file is already included (e.g. under CompilerGeneratedFilesOutputPath or default glob). -->
             <Compile Remove="$(LucideSvgMapOutput)" />
             <Compile Include="$(LucideSvgMapOutput)" />
         </ItemGroup>
-    </Target>
 
-    <Target Name="IncludeGeneratedLucideIconSvgProvider" AfterTargets="RunLucideGeneratorBuildTasks" Condition="'$(LucideIncludeSvgProvider)'=='true'">
-        <ItemGroup Condition="Exists('$(LucideSvgProviderOutput)')">
+        <ItemGroup Condition="'$(LucideIncludeSvgProvider)'=='true' and Exists('$(LucideSvgProviderOutput)')">
             <Compile Remove="$(LucideSvgProviderOutput)" />
             <Compile Include="$(LucideSvgProviderOutput)" />
         </ItemGroup>
-    </Target>
 
-    <Target Name="IncludeGeneratedLucideIconServiceCollectionExtensions" AfterTargets="RunLucideGeneratorBuildTasks" Condition="'$(LucideIncludeServiceCollectionExtensions)'=='true'">
-        <ItemGroup Condition="Exists('$(LucideServiceCollectionExtensionsOutput)')">
+        <ItemGroup Condition="'$(LucideIncludeServiceCollectionExtensions)'=='true' and Exists('$(LucideServiceCollectionExtensionsOutput)')">
             <Compile Remove="$(LucideServiceCollectionExtensionsOutput)" />
             <Compile Include="$(LucideServiceCollectionExtensionsOutput)" />
         </ItemGroup>
