@@ -19,7 +19,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.5" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.5" PrivateAssets="all" />
-        <PackageReference Include="Soenneker.Lucide.Enums.Icons" Version="4.0.68" />
+        <PackageReference Include="Soenneker.Lucide.Enums.Icons" Version="4.0.76" />
         <PackageReference Include="Soenneker.Lucide.Icons" Version="4.0.90" />
         <PackageReference Include="Soenneker.Quark.Gen.Lucide.Abstractions" Version="4.0.11" />
     </ItemGroup>
