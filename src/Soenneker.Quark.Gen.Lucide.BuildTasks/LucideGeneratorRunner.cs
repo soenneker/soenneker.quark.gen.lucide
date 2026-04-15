@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -84,9 +85,22 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
             _logger.LogWarning("Lucide Resources directory does not exist: {Path}. LucideIconSvgMap will have no SVG content.", resourcesDir);
         }
 
+        string? outputDir = Path.GetDirectoryName(outputPath);
+        string outputRoot = outputDir.HasContent() ? outputDir! : _directoryUtil.GetWorkingDirectory();
+        string providerPath = Path.Combine(outputRoot, "LucideIconSvgProvider.g.cs");
+        string extensionsPath = Path.Combine(outputRoot, "LucideIconServiceCollectionExtensions.g.cs");
+        string hashPath = Path.Combine(outputRoot, "lucide-generator.inputs.hash");
+
+        string inputHash = await ComputeInputHash(projectDir, resourcesDir, cancellationToken).NoSync();
+
+        if (await CanSkipGeneration(inputHash, hashPath, outputPath, providerPath, extensionsPath, cancellationToken).NoSync())
+        {
+            _logger.LogInformation("Lucide inputs unchanged. Skipping generation for project {ProjectDir}.", projectDir);
+            return 0;
+        }
+
         _logger.LogInformation("Generating LucideIconSvgMap for {Count} icons.", icons.Count);
         string content = await GenerateLucideIconSvgMap(icons, resourcesDir, cancellationToken).NoSync();
-        string? outputDir = Path.GetDirectoryName(outputPath);
 
         if (outputDir.HasContent())
         {
@@ -98,20 +112,88 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         await _fileUtil.Write(outputPath, content, log: true, cancellationToken).NoSync();
         _logger.LogInformation("Generated {Output} with {Count} icons.", outputPath, icons.Count);
 
-        string providerPath = Path.Combine(outputDir ?? _directoryUtil.GetWorkingDirectory(), "LucideIconSvgProvider.g.cs");
         string providerContent = GenerateLucideIconSvgProvider();
         _logger.LogInformation("Writing LucideIconSvgProvider to {ProviderPath}.", providerPath);
         await _fileUtil.Write(providerPath, providerContent, log: true, cancellationToken).NoSync();
         _logger.LogInformation("Generated {ProviderPath}.", providerPath);
 
-        string extensionsPath = Path.Combine(outputDir ?? _directoryUtil.GetWorkingDirectory(), "LucideIconServiceCollectionExtensions.g.cs");
         string extensionsContent = GenerateLucideIconServiceCollectionExtensions();
         _logger.LogInformation("Writing LucideIconServiceCollectionExtensions to {ExtensionsPath}.", extensionsPath);
         await _fileUtil.Write(extensionsPath, extensionsContent, log: true, cancellationToken).NoSync();
         _logger.LogInformation("Generated {ExtensionsPath}.", extensionsPath);
+        await _fileUtil.Write(hashPath, inputHash, log: false, cancellationToken).NoSync();
         _logger.LogInformation("Completed Lucide icon generation for project {ProjectDir}.", projectDir);
 
         return 0;
+    }
+
+    private async ValueTask<bool> CanSkipGeneration(string inputHash, string hashPath, string outputPath, string providerPath, string extensionsPath,
+        CancellationToken cancellationToken)
+    {
+        if (!await _fileUtil.Exists(outputPath, cancellationToken).NoSync() ||
+            !await _fileUtil.Exists(providerPath, cancellationToken).NoSync() ||
+            !await _fileUtil.Exists(extensionsPath, cancellationToken).NoSync() ||
+            !await _fileUtil.Exists(hashPath, cancellationToken).NoSync())
+        {
+            return false;
+        }
+
+        string? previousHash = await _fileUtil.TryRead(hashPath, log: false, cancellationToken).NoSync();
+        return string.Equals(previousHash?.Trim(), inputHash, StringComparison.Ordinal);
+    }
+
+    private async ValueTask<string> ComputeInputHash(string projectDir, string resourcesDir, CancellationToken cancellationToken)
+    {
+        var entries = new List<string>();
+
+        await AddFileMetadataEntries(entries, projectDir, ".cs", cancellationToken).NoSync();
+        await AddFileMetadataEntries(entries, projectDir, ".razor", cancellationToken).NoSync();
+        await AddFileMetadataEntries(entries, resourcesDir, ".svg", cancellationToken).NoSync();
+
+        string assemblyLocation = GetType().Assembly.Location;
+        if (!string.IsNullOrWhiteSpace(assemblyLocation) && File.Exists(assemblyLocation))
+        {
+            entries.Add(BuildMetadataEntry("buildtasks", assemblyLocation, assemblyLocation));
+        }
+
+        entries.Sort(StringComparer.Ordinal);
+
+        string manifest = string.Join('\n', entries);
+        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(manifest));
+        return Convert.ToHexString(bytes);
+    }
+
+    private async ValueTask AddFileMetadataEntries(List<string> entries, string rootDir, string extension, CancellationToken cancellationToken)
+    {
+        if (!await _directoryUtil.Exists(rootDir, cancellationToken).NoSync())
+            return;
+
+        List<string> files = await _directoryUtil.GetFilesByExtension(rootDir, extension, recursive: true, cancellationToken).NoSync();
+
+        foreach (string file in files)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (IsExcludedProjectPath(file))
+                continue;
+
+            entries.Add(BuildMetadataEntry(rootDir, file, extension));
+        }
+    }
+
+    private static string BuildMetadataEntry(string rootDir, string filePath, string category)
+    {
+        var info = new FileInfo(filePath);
+        string relativePath = Path.GetRelativePath(rootDir, filePath).Replace('\\', '/');
+        return $"{category}|{relativePath}|{info.Length}|{info.LastWriteTimeUtc.Ticks}";
+    }
+
+    private static bool IsExcludedProjectPath(string path)
+    {
+        return path.Contains("\\obj\\", StringComparison.OrdinalIgnoreCase) ||
+               path.Contains("/obj/", StringComparison.OrdinalIgnoreCase) ||
+               path.Contains("\\bin\\", StringComparison.OrdinalIgnoreCase) ||
+               path.Contains("/bin/", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task<HashSet<string>> CollectIconsFromProject(string projectDir, CancellationToken ct)
