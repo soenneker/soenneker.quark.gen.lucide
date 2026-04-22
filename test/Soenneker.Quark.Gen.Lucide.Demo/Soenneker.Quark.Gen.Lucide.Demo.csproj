@@ -1,7 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
-
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -30,5 +27,4 @@
 
     <!-- When using ProjectReference to Gen.Lucide, the SDK does not import the referenced project's .targets, so RunLucideGeneratorBuildTasks never runs. Import explicitly. -->
     <Import Project="..\..\src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.targets" Condition="Exists('..\..\src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.targets')" />
-
 </Project>

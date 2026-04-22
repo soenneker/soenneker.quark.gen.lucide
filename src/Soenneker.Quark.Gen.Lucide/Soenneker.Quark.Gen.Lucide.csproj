@@ -1,7 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-
 <Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>latest</LangVersion>
@@ -52,9 +49,7 @@
     <ItemGroup>
         <None Include="Soenneker.Quark.Gen.Lucide.targets" Pack="true" PackagePath="build/" />
         <None Include="Soenneker.Quark.Gen.Lucide.targets" Pack="true" PackagePath="buildTransitive/" />
-
-        <None Include="$([MSBuild]::EnsureTrailingSlash('$(_LucideBuildTasksOutputDir)'))**/*.*"
-              Pack="true" PackagePath="buildTransitive/%(RecursiveDir)" />
+        <None Include="$([MSBuild]::EnsureTrailingSlash('$(_LucideBuildTasksOutputDir)'))**/*.*" Pack="true" PackagePath="buildTransitive/%(RecursiveDir)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -68,14 +63,11 @@
 
     <!-- When consumed via ProjectReference, BuildTasks must exist so RunLucideGeneratorBuildTasks can run. -->
     <Target Name="BuildBuildTasksToolOnBuild" BeforeTargets="Build" Condition="!Exists('$(_LucideBuildTasksDllPath)')">
-
         <MSBuild Projects="$(_LucideBuildTasksProjectPath)" Targets="Build" Properties="Configuration=$(Configuration)" BuildInParallel="true" />
     </Target>
 
     <Target Name="BuildBuildTasksTool" BeforeTargets="Pack" Condition="'$(IsPackable)' == 'true'">
-
         <MSBuild Projects="$(_LucideBuildTasksProjectPath)" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" BuildInParallel="true" />
-
         <Error Condition="!Exists('$(_LucideBuildTasksDllPath)')" Text="BuildTasks output missing. Aborting pack to avoid publishing a broken package." />
     </Target>
 
