@@ -9,9 +9,9 @@ public static class Startup
 {
     public static void ConfigureServices(IServiceCollection services)
     {
-        services.AddDirectoryUtilAsScoped();
-        services.AddFileUtilAsScoped();
-        services.AddScoped<ILucideGeneratorRunner, LucideGeneratorRunner>();
+        services.AddDirectoryUtilAsSingleton();
+        services.AddFileUtilAsSingleton();
+        services.AddSingleton<ILucideGeneratorRunner, LucideGeneratorRunner>();
         services.AddHostedService<ConsoleHostedService>();
     }
 }
