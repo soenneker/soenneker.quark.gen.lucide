@@ -6,10 +6,18 @@ using System.Threading.Tasks;
 
 namespace Soenneker.Quark.Gen.Lucide.BuildTasks;
 
+/// <summary>
+/// Represents the program.
+/// </summary>
 public sealed class Program
 {
     private static CancellationTokenSource? _cts;
 
+    /// <summary>
+    /// Executes the main operation.
+    /// </summary>
+    /// <param name="args">The args.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public static async Task Main(string[] args)
     {
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
@@ -42,6 +50,11 @@ public sealed class Program
         }
     }
 
+    /// <summary>
+    /// Creates host builder.
+    /// </summary>
+    /// <param name="args">The args.</param>
+    /// <returns>The result of the operation.</returns>
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
         return Host.CreateDefaultBuilder(args)
