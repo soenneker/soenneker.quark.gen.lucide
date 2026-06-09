@@ -14,6 +14,6 @@
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
         <PackageReference Include="Soenneker.Utils.Case" Version="4.0.48" />
         <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.864" />
-        <PackageReference Include="Soenneker.Utils.File" Version="4.0.2171" />
+        <PackageReference Include="Soenneker.Utils.File" Version="4.0.2172" />
     </ItemGroup>
 </Project>
