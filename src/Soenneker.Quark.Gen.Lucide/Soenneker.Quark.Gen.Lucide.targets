@@ -23,7 +23,7 @@
             <_LucideIconsVersion>@(_LucideIconsPkgRef->'%(Version)')</_LucideIconsVersion>
             <_LucidePackagesRoot Condition="'$(RestorePackagesPath)' != ''">$(RestorePackagesPath)</_LucidePackagesRoot>
             <_LucidePackagesRoot Condition="'$(_LucidePackagesRoot)' == '' and '$(NuGetPackageRoot)' != ''">$(NuGetPackageRoot)</_LucidePackagesRoot>
-            <_LucideIconsPackageResources Condition="'$(_LucidePackagesRoot)' != '' and '$(_LucideIconsVersion)' != ''">$([System.IO.Path]::Combine('$(_LucidePackagesRoot)', 'soenneker.lucide.icons', '$(_LucideIconsVersion)', 'contentFiles', 'any', 'any', 'Resources'))</_LucideIconsPackageResources>
+            <_LucideIconsPackageResources Condition="'$(_LucidePackagesRoot)' != '' and '$(_LucideIconsVersion)' != ''">$([System.IO.Path]::Combine('$(_LucidePackagesRoot)', 'soenneker.lucide.icons', '$(_LucideIconsVersion)', 'contentFiles', 'any', 'any', 'Resources', 'Lucide'))</_LucideIconsPackageResources>
             <_LucideResourcesOutputDir>$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'Resources'))</_LucideResourcesOutputDir>
             <_LucideIconsPackageResourcesGlob>$(_LucideIconsPackageResources)/*.svg</_LucideIconsPackageResourcesGlob>
         </PropertyGroup>

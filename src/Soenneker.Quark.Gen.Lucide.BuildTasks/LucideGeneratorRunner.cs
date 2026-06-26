@@ -80,9 +80,9 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
 
         _logger.LogInformation("Generating Lucide outputs using resources at {ResourcesDir}.", resourcesDir);
 
-        if (!await _directoryUtil.Exists(resourcesDir, cancellationToken).NoSync())
+        if (icons.Count > 0 && !await HasSvgResources(resourcesDir, cancellationToken).NoSync())
         {
-            _logger.LogWarning("Lucide Resources directory does not exist: {Path}. LucideIconSvgMap will have no SVG content.", resourcesDir);
+            return Fail($"Lucide resources directory contains no SVG files: {resourcesDir}. Check the Soenneker.Lucide.Icons package contentFiles path.");
         }
 
         string? outputDir = Path.GetDirectoryName(outputPath);
@@ -179,6 +179,15 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
 
             entries.Add(BuildMetadataEntry(rootDir, file, extension));
         }
+    }
+
+    private async ValueTask<bool> HasSvgResources(string resourcesDir, CancellationToken cancellationToken)
+    {
+        if (!await _directoryUtil.Exists(resourcesDir, cancellationToken).NoSync())
+            return false;
+
+        List<string> files = await _directoryUtil.GetFilesByExtension(resourcesDir, ".svg", recursive: false, cancellationToken).NoSync();
+        return files.Count > 0;
     }
 
     private static string BuildMetadataEntry(string rootDir, string filePath, string category)
