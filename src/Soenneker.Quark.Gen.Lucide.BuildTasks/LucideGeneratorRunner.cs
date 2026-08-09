@@ -168,7 +168,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         if (!await _directoryUtil.Exists(rootDir, cancellationToken).NoSync())
             return;
 
-        List<string> files = await _directoryUtil.GetFilesByExtension(rootDir, extension, recursive: true, cancellationToken).NoSync();
+        List<string> files = ProjectFileEnumerator.EnumerateByExtension(rootDir, extension, cancellationToken).ToList();
 
         foreach (string file in files)
         {
@@ -208,11 +208,8 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
     private async Task<HashSet<string>> CollectIconsFromProject(string projectDir, CancellationToken ct)
     {
         var icons = new HashSet<string>(StringComparer.Ordinal);
-        List<string> csFiles = await _directoryUtil.GetFilesByExtension(projectDir, ".cs", recursive: true, ct).NoSync();
-        List<string> razorFiles = await _directoryUtil.GetFilesByExtension(projectDir, ".razor", recursive: true, ct).NoSync();
-        IEnumerable<string> allFiles = csFiles.Concat(razorFiles)
-            .Where(p => !p.Contains("\\obj\\", StringComparison.Ordinal) && !p.Contains("/obj/", StringComparison.Ordinal)
-                && !p.Contains("\\bin\\", StringComparison.Ordinal) && !p.Contains("/bin/", StringComparison.Ordinal));
+        IEnumerable<string> allFiles = ProjectFileEnumerator.EnumerateByExtension(projectDir, ".cs", ct)
+            .Concat(ProjectFileEnumerator.EnumerateByExtension(projectDir, ".razor", ct));
 
         foreach (string file in allFiles)
         {
