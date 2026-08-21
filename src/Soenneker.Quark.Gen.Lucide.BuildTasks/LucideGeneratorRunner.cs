@@ -59,13 +59,6 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
             : Path.Combine(projectDir, "obj", "Generated", "LucideIconSvgMap.g.cs");
 
         _logger.LogInformation("Starting Lucide icon generation for project {ProjectDir}.", projectDir);
-        _logger.LogInformation("Collecting Lucide icon usages from project sources...");
-
-        HashSet<string> icons = await CollectIconsFromProject(projectDir, cancellationToken).NoSync();
-        if (icons.Count == 0)
-        {
-            _logger.LogInformation("No LucideIcon usages found. Generating empty Lucide outputs so DI registration remains available.");
-        }
 
         // SVGs live in build directory / Resources (e.g. $(OutputPath)Resources). Use explicit path if provided, else projectDir/Resources.
         string resourcesDir;
@@ -76,13 +69,6 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         else
         {
             resourcesDir = Path.Combine(projectDir, "Resources");
-        }
-
-        _logger.LogInformation("Generating Lucide outputs using resources at {ResourcesDir}.", resourcesDir);
-
-        if (icons.Count > 0 && !await HasSvgResources(resourcesDir, cancellationToken).NoSync())
-        {
-            return Fail($"Lucide resources directory contains no SVG files: {resourcesDir}. Check the Soenneker.Lucide.Icons package contentFiles path.");
         }
 
         string? outputDir = Path.GetDirectoryName(outputPath);
@@ -97,6 +83,21 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         {
             _logger.LogInformation("Lucide inputs unchanged. Skipping generation for project {ProjectDir}.", projectDir);
             return 0;
+        }
+
+        _logger.LogInformation("Collecting Lucide icon usages from project sources...");
+        HashSet<string> icons = await CollectIconsFromProject(projectDir, cancellationToken).NoSync();
+
+        if (icons.Count == 0)
+        {
+            _logger.LogInformation("No LucideIcon usages found. Generating empty Lucide outputs so DI registration remains available.");
+        }
+
+        _logger.LogInformation("Generating Lucide outputs using resources at {ResourcesDir}.", resourcesDir);
+
+        if (icons.Count > 0 && !await HasSvgResources(resourcesDir, cancellationToken).NoSync())
+        {
+            return Fail($"Lucide resources directory contains no SVG files: {resourcesDir}. Check the Soenneker.Lucide.Icons package contentFiles path.");
         }
 
         _logger.LogInformation("Generating LucideIconSvgMap for {Count} icons.", icons.Count);
