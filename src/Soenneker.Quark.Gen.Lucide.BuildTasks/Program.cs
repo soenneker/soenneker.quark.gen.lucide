@@ -14,10 +14,10 @@ public sealed class Program
     private static CancellationTokenSource? _cts;
 
     /// <summary>
-    /// Executes the main operation.
+    /// Runs the application using the supplied command-line arguments.
     /// </summary>
-    /// <param name="args">The args.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <param name="args">Command-line arguments passed to the application.</param>
+    /// <returns>A task that completes when the application exits.</returns>
     public static async Task Main(string[] args)
     {
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
@@ -53,8 +53,8 @@ public sealed class Program
     /// <summary>
     /// Creates host builder.
     /// </summary>
-    /// <param name="args">The args.</param>
-    /// <returns>The result of the operation.</returns>
+    /// <param name="args">Command-line arguments passed to the application.</param>
+    /// <returns>A host builder configured with the application services and settings.</returns>
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
         return Host.CreateDefaultBuilder(args)

@@ -27,10 +27,10 @@ public sealed class ConsoleHostedService : IHostedService
     }
 
     /// <summary>
-    /// Executes the start async operation.
+    /// Starts the Console Hosted Service and begins its background work.
     /// </summary>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>A task that completes after the Console Hosted Service has started.</returns>
     public Task StartAsync(CancellationToken cancellationToken = default)
     {
         _appLifetime.ApplicationStarted.Register(() =>
@@ -59,10 +59,10 @@ public sealed class ConsoleHostedService : IHostedService
     }
 
     /// <summary>
-    /// Executes the stop async operation.
+    /// Stops the Console Hosted Service and waits for its background work to finish.
     /// </summary>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>A task that completes after the Console Hosted Service has stopped.</returns>
     public Task StopAsync(CancellationToken cancellationToken = default)
     {
         Environment.ExitCode = _exitCode.GetValueOrDefault(-1);

@@ -9,9 +9,9 @@ namespace Soenneker.Quark.Gen.Lucide.BuildTasks.Abstract;
 public interface ILucideGeneratorRunner
 {
     /// <summary>
-    /// Executes the run operation.
+    /// Runs lucide Generator Runner for the Lucide Generator Runner.
     /// </summary>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>A task containing the result of the operation.</returns>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>A task whose result is the requested value.</returns>
     ValueTask<int> Run(CancellationToken cancellationToken = default);
 }
