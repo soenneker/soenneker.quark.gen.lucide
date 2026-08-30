@@ -3,15 +3,15 @@ using Microsoft.CodeAnalysis;
 namespace Soenneker.Quark.Gen.Lucide;
 
 /// <summary>
-/// Represents the lucide generator generator.
+/// Provides the analyzer entry point for the Lucide build-time generator package.
 /// </summary>
 [Generator]
 public sealed class LucideGeneratorGenerator : IIncrementalGenerator
 {
     /// <summary>
-    /// Initializes the Lucide Generator Generator so it is ready for use.
+    /// Initializes the analyzer entry point. Lucide source generation is performed by the package's MSBuild task.
     /// </summary>
-    /// <param name="context">HTTP context containing the Authorization header.</param>
+    /// <param name="context">The incremental generator initialization context.</param>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
     }

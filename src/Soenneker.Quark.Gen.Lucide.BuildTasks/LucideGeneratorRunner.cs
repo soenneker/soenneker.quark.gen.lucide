@@ -19,7 +19,6 @@ using Soenneker.Utils.PooledStringBuilders;
 
 namespace Soenneker.Quark.Gen.Lucide.BuildTasks;
 
-/// <inheritdoc cref="ILucideGeneratorRunner"/>
 public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
 {
     private static readonly Regex _csIconPattern = new(
@@ -315,7 +314,6 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         sb.AppendLine("/// </summary>");
         sb.AppendLine("internal sealed class LucideIconSvgProvider : ILucideIconSvgProvider");
         sb.AppendLine("{");
-        sb.AppendLine("    /// <inheritdoc />");
         sb.AppendLine("    public string? GetSvg(string iconName) => LucideIconSvgMap.GetSvg(iconName);");
         sb.AppendLine("}");
         return sb.ToString();
