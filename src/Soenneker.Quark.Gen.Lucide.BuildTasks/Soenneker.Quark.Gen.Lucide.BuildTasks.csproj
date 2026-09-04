@@ -13,8 +13,8 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
         <PackageReference Include="Soenneker.Hashing.Sha256" Version="4.0.1" />
-        <PackageReference Include="Soenneker.Utils.Case" Version="4.0.78" />
-        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.919" />
-        <PackageReference Include="Soenneker.Utils.File" Version="4.0.2248" />
+        <PackageReference Include="Soenneker.Utils.Case" Version="4.0.79" />
+        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.921" />
+        <PackageReference Include="Soenneker.Utils.File" Version="4.0.2251" />
     </ItemGroup>
 </Project>
