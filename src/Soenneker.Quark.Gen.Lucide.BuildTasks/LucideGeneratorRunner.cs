@@ -19,6 +19,7 @@ using Soenneker.Utils.PooledStringBuilders;
 
 namespace Soenneker.Quark.Gen.Lucide.BuildTasks;
 
+/// <inheritdoc cref="ILucideGeneratorRunner" />
 public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
 {
     private static readonly Regex _csIconPattern = new(
