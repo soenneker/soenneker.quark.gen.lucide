@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -11,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Soenneker.Extensions.String;
 using Soenneker.Extensions.Task;
 using Soenneker.Extensions.ValueTask;
+using Soenneker.Hashing.Sha256;
 using Soenneker.Quark.Gen.Lucide.BuildTasks.Abstract;
 using Soenneker.Utils.Case;
 using Soenneker.Utils.Directory.Abstract;
@@ -22,6 +22,8 @@ namespace Soenneker.Quark.Gen.Lucide.BuildTasks;
 /// <inheritdoc cref="ILucideGeneratorRunner" />
 public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
 {
+    private static readonly Sha256HashingUtil _sha256 = new();
+
     private static readonly Regex _csIconPattern = new(
         @"LucideIcon\.([A-Za-z0-9_]+)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -160,7 +162,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         entries.Sort(StringComparer.Ordinal);
 
         string manifest = string.Join('\n', entries);
-        byte[] bytes = SHA256.HashData(Encoding.UTF8.GetBytes(manifest));
+        byte[] bytes = _sha256.Hash(Encoding.UTF8.GetBytes(manifest));
         return Convert.ToHexString(bytes);
     }
 
