@@ -13,7 +13,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
         <PackageReference Include="Soenneker.Utils.Case" Version="4.0.78" />
-        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.917" />
+        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.918" />
         <PackageReference Include="Soenneker.Utils.File" Version="4.0.2247" />
     </ItemGroup>
 </Project>
