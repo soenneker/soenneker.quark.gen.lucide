@@ -14,7 +14,7 @@
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
         <PackageReference Include="Soenneker.Hashing.Sha256" Version="4.0.2" />
         <PackageReference Include="Soenneker.Utils.Case" Version="4.0.84" />
-        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.925" />
+        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.926" />
         <PackageReference Include="Soenneker.Utils.File" Version="4.0.2256" />
     </ItemGroup>
 </Project>
