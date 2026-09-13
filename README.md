@@ -23,8 +23,14 @@ The enum package supplies `LucideIcon` values. The icons package supplies the SV
 Reference icons directly in C# or Razor so the build can discover them:
 
 ```razor
-<Lucide Icon="LucideIcon.Check" />
-<Button Icon="LucideIcon.ArrowRight">Continue</Button>
+@using Soenneker.Quark
+@using Soenneker.Lucide.Enums.Icons
+
+<Icon Name="LucideIcon.Check" aria-label="Complete" />
+<Button>
+    <Icon Name="LucideIcon.ArrowRight" aria-hidden="true" />
+    Continue
+</Button>
 ```
 
 Register the generated provider with dependency injection:
@@ -58,3 +64,11 @@ Override the generated map path when the default intermediate location is unsuit
 ```
 
 The generated SVG map and provider are implementation details. Consume them through `ILucideIconSvgProvider` or Quark’s Lucide components.
+
+## Application setup and troubleshooting
+
+The Razor example uses `Soenneker.Quark.Suite`. Reference this generator directly in the application project and register its generated provider alongside `AddQuarkSuiteAsScoped()`. Installing the SVG catalog alone does not register the provider. The [Quark installation guide](https://quark.soenneker.com/installation) shows the full setup.
+
+The scanner looks for source-visible `LucideIcon.Name` references. Prefer those explicit names instead of renaming the enum through an arbitrary alias or constructing names at runtime. For runtime choices, keep a C# mapping that references every allowed icon directly.
+
+If `AddLucideIconsAsScoped()` is unresolved, run a normal build, import `Soenneker.Quark.Gen.Lucide.Generated`, and inspect `obj/.../Generated`. `LucideIncludeSvgProvider` and `LucideIncludeServiceCollectionExtensions` default to true for an app; library authors can disable them when only producing the map. Do not copy those disabled settings from the Quark library into the application that needs the provider.
