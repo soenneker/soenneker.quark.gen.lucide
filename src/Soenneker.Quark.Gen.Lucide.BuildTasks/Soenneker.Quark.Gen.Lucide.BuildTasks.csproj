@@ -15,6 +15,6 @@
         <PackageReference Include="Soenneker.Hashing.Sha256" Version="4.0.5" />
         <PackageReference Include="Soenneker.Utils.Case" Version="4.0.94" />
         <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.944" />
-        <PackageReference Include="Soenneker.Utils.File" Version="4.0.2279" />
+        <PackageReference Include="Soenneker.Utils.File" Version="4.0.2280" />
     </ItemGroup>
 </Project>
