@@ -5,6 +5,7 @@
     </Target>
 
     <PropertyGroup>
+        <_LucideTargetsPath>$(MSBuildThisFileFullPath)</_LucideTargetsPath>
         <LucideGeneratorBuildEnabled Condition="'$(LucideGeneratorBuildEnabled)'==''">true</LucideGeneratorBuildEnabled>
         <LucideIncludeSvgProvider Condition="'$(LucideIncludeSvgProvider)'==''">true</LucideIncludeSvgProvider>
         <LucideIncludeServiceCollectionExtensions Condition="'$(LucideIncludeServiceCollectionExtensions)'==''">true</LucideIncludeServiceCollectionExtensions>
@@ -19,8 +20,7 @@
                                 Exclude="$(_LucideProjectDir)\bin\**;$(_LucideProjectDir)\obj\**;$(_LucideProjectDir)\node_modules\**" />
     </ItemGroup>
 
-    <!-- Copy Soenneker.Lucide.Icons SVGs to $(IntermediateOutputPath)Resources so the generator reads from a transient build cache. -->
-    <Target Name="CopyLucideIconsToBuildResources" BeforeTargets="ResolveLucideBuildTasksPath" Condition="'$(DesignTimeBuild)'!='true'">
+    <Target Name="ResolveLucideResources" BeforeTargets="ResolveLucideBuildTasksPath" Condition="'$(DesignTimeBuild)'!='true'">
         <ItemGroup>
             <_LucideIconsPkgRef Include="@(PackageReference)" Condition="'%(Identity)' == 'Soenneker.Lucide.Icons'" />
         </ItemGroup>
@@ -30,13 +30,7 @@
             <_LucidePackagesRoot Condition="'$(_LucidePackagesRoot)' == '' and '$(NuGetPackageRoot)' != ''">$(NuGetPackageRoot)</_LucidePackagesRoot>
             <_LucideIconsPackageResources Condition="'$(_LucidePackagesRoot)' != '' and '$(_LucideIconsVersion)' != ''">$([System.IO.Path]::Combine('$(_LucidePackagesRoot)', 'soenneker.lucide.icons', '$(_LucideIconsVersion)', 'contentFiles', 'any', 'any', 'Resources', 'Lucide'))</_LucideIconsPackageResources>
             <_LucideResourcesOutputDir>$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'Resources'))</_LucideResourcesOutputDir>
-            <_LucideIconsPackageResourcesGlob>$(_LucideIconsPackageResources)/*.svg</_LucideIconsPackageResourcesGlob>
         </PropertyGroup>
-        <ItemGroup Condition="Exists('$(_LucideIconsPackageResources)')">
-            <LucideIconSvgFiles Include="$(_LucideIconsPackageResourcesGlob)" />
-        </ItemGroup>
-        <MakeDir Directories="$(_LucideResourcesOutputDir)" Condition="Exists('$(_LucideIconsPackageResources)')" />
-        <Copy SourceFiles="@(LucideIconSvgFiles)" DestinationFolder="$(_LucideResourcesOutputDir)" SkipUnchangedFiles="true" Condition="Exists('$(_LucideIconsPackageResources)')" />
     </Target>
 
     <!-- Resolve LucideBuildTasksDllPath and output paths at target execution time (IntermediateOutputPath is not set when this .targets file is loaded). Package-scoped property names avoid collisions when multiple Soenneker.Quark.Gen.* packages are referenced. -->
@@ -47,8 +41,9 @@
             <LucideSvgProviderOutput Condition="'$(LucideSvgProviderOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconSvgProvider.g.cs'))</LucideSvgProviderOutput>
             <LucideServiceCollectionExtensionsOutput Condition="'$(LucideServiceCollectionExtensionsOutput)' == ''">$([System.IO.Path]::Combine($([System.IO.Path]::GetDirectoryName('$(LucideSvgMapOutput)')), 'LucideIconServiceCollectionExtensions.g.cs'))</LucideServiceCollectionExtensionsOutput>
             <_LucideOutputArg> --output &quot;$(LucideSvgMapOutput)&quot;</_LucideOutputArg>
-            <!-- Generator reads SVGs from the intermediate build cache unless explicitly overridden. -->
+            <!-- Read SVGs directly from the package unless explicitly overridden. -->
             <_LucideResourcesArg Condition="'$(LucideIconsResourcesPath)' != ''"> --resourcesPath &quot;$(LucideIconsResourcesPath)&quot;</_LucideResourcesArg>
+            <_LucideResourcesArg Condition="'$(_LucideResourcesArg)' == '' and Exists('$(_LucideIconsPackageResources)')"> --resourcesPath &quot;$(_LucideIconsPackageResources)&quot;</_LucideResourcesArg>
             <_LucideResourcesArg Condition="'$(_LucideResourcesArg)' == ''"> --resourcesPath &quot;$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'Resources'))&quot;</_LucideResourcesArg>
         </PropertyGroup>
         <PropertyGroup Condition="'$(LucideBuildTasksDllPath)' == ''">
@@ -69,10 +64,31 @@
         </PropertyGroup>
     </Target>
 
+
+    <Target Name="PrepareLucideGeneratorInputs" DependsOnTargets="ResolveLucideBuildTasksPath"
+            Condition="'$(DesignTimeBuild)'!='true' and '$(IsCrossTargetingBuild)'!='true' and '$(LucideGeneratorBuildEnabled)'=='true'">
+        <PropertyGroup>
+            <_LucideInputManifest>$(IntermediateOutputPath)lucide-generator.inputs</_LucideInputManifest>
+            <_LucideSuccessStamp>$(IntermediateOutputPath)lucide-generator.stamp</_LucideSuccessStamp>
+            <_LucideResourceRoot>$(_LucideIconsPackageResources)</_LucideResourceRoot>
+            <_LucideResourceRoot Condition="'$(_LucideResourceRoot)'==''">$(IntermediateOutputPath)Resources</_LucideResourceRoot>
+            <_LucideResourceRoot Condition="'$(LucideIconsResourcesPath)'!=''">$(LucideIconsResourcesPath)</_LucideResourceRoot>
+        </PropertyGroup>
+        <ItemGroup>
+            <_LucideTrackedInputs Include="@(_LucideGeneratorInputs);$(_LucideResourceRoot)/*.svg;$(_LucideTargetsPath);$(MSBuildProjectFullPath);$(MSBuildAllProjects);$(ProjectAssetsFile);$(LucideBuildTasksDllPath)" />
+        </ItemGroup>
+        <MakeDir Directories="$(IntermediateOutputPath)" />
+        <WriteLinesToFile File="$(_LucideInputManifest)"
+                          Lines="@(_LucideTrackedInputs->'%(FullPath)|%(ModifiedTime)');$(_LucideOutputArg);$(_LucideResourcesArg)"
+                          Overwrite="true" WriteOnlyWhenDifferent="true" />
+        <Delete Files="$(_LucideSuccessStamp)" Condition="!Exists('$(LucideSvgMapOutput)') or !Exists('$(LucideSvgProviderOutput)') or !Exists('$(LucideServiceCollectionExtensionsOutput)')" />
+    </Target>
+
     <Target Name="RunLucideGeneratorBuildTasks"
+            DependsOnTargets="PrepareLucideGeneratorInputs"
             BeforeTargets="XamlPreCompile;BeforeCompile;CoreCompile"
-            Inputs="@(_LucideGeneratorInputs);$(MSBuildProjectFullPath);$(ProjectAssetsFile);$(LucideBuildTasksDllPath)"
-            Outputs="$(LucideSvgMapOutput);$(LucideSvgProviderOutput);$(LucideServiceCollectionExtensionsOutput)"
+            Inputs="$(_LucideInputManifest)"
+            Outputs="$(_LucideSuccessStamp)"
             Condition="'$(DesignTimeBuild)'!='true' and '$(IsCrossTargetingBuild)'!='true' and '$(LucideGeneratorBuildEnabled)'=='true'">
 
         <Message Importance="high" Text="Running Soenneker.Quark.Gen.Lucide BuildTasks: projectDir=$(_LucideProjectDir)" />
@@ -89,6 +105,7 @@
               StandardOutputImportance="high"
               StandardErrorImportance="high"
               Command='dotnet exec &quot;$(LucideBuildTasksDllPath)&quot; --projectDir &quot;$(_LucideProjectDir)&quot;$(_LucideOutputArg)$(_LucideResourcesArg)' />
+        <Touch Files="$(_LucideSuccessStamp)" AlwaysCreate="true" />
     </Target>
 
     <!-- LucideSvgProviderOutput and LucideServiceCollectionExtensionsOutput are set in ResolveLucideBuildTasksPath. -->

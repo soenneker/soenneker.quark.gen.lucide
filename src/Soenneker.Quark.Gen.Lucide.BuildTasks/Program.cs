@@ -1,3 +1,5 @@
+using Soenneker.Quark.Gen.Lucide.BuildTasks.Abstract;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -36,12 +38,22 @@ public sealed class Program
 
         try
         {
-            await CreateHostBuilder(args).RunConsoleAsync(_cts.Token);
+            var services = new ServiceCollection();
+            services.AddLogging(logging => logging.AddConsole());
+            Startup.ConfigureServices(services);
+
+            await using ServiceProvider provider = services.BuildServiceProvider();
+            await using AsyncServiceScope scope = provider.CreateAsyncScope();
+            Environment.ExitCode = await scope.ServiceProvider.GetRequiredService<ILucideGeneratorRunner>().Run(_cts.Token);
+        }
+        catch (OperationCanceledException) when (_cts.IsCancellationRequested)
+        {
+            Environment.ExitCode = 130;
         }
         catch (Exception e)
         {
             await Console.Error.WriteLineAsync($"Stopped program because of exception: {e}");
-            throw;
+            Environment.ExitCode = 1;
         }
         finally
         {
