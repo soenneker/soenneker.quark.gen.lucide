@@ -154,7 +154,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         await AddFileMetadataEntries(entries, resourcesDir, ".svg", cancellationToken).NoSync();
 
         string assemblyLocation = GetType().Assembly.Location;
-        if (!string.IsNullOrWhiteSpace(assemblyLocation) && File.Exists(assemblyLocation))
+        if (!string.IsNullOrWhiteSpace(assemblyLocation) && (await _fileUtil.Exists(assemblyLocation)))
         {
             entries.Add(BuildMetadataEntry("buildtasks", assemblyLocation, assemblyLocation));
         }

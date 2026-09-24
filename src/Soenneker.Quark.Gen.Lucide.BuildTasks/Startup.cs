@@ -19,6 +19,5 @@ public static class Startup
         services.AddDirectoryUtilAsSingleton();
         services.AddFileUtilAsSingleton();
         services.AddSingleton<ILucideGeneratorRunner, LucideGeneratorRunner>();
-        services.AddHostedService<ConsoleHostedService>();
     }
 }
