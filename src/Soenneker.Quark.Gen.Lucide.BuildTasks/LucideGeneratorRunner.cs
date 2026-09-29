@@ -153,7 +153,9 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         await AddFileMetadataEntries(entries, projectDir, ".razor", cancellationToken).NoSync();
         await AddFileMetadataEntries(entries, resourcesDir, ".svg", cancellationToken).NoSync();
 
-        string assemblyLocation = GetType().Assembly.Location;
+        string assemblyLocation = System.IO.Path.Combine(AppContext.BaseDirectory, typeof(LucideGeneratorRunner).Assembly.GetName().Name + ".dll");
+        if (!System.IO.File.Exists(assemblyLocation))
+            assemblyLocation = Environment.ProcessPath ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(assemblyLocation) && (await _fileUtil.Exists(assemblyLocation)))
         {
             entries.Add(BuildMetadataEntry("buildtasks", assemblyLocation, assemblyLocation));
