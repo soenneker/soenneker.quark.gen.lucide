@@ -34,6 +34,13 @@ jobs:
           dotnet-version: 10.0.401
       - name: Publish Native AOT executable
         run: dotnet publish src/Soenneker.Quark.Gen.Lucide.BuildTasks -c Release -r ${{ matrix.rid }} -o artifacts/native/${{ matrix.rid }}
+      - name: Verify native generator output
+        shell: pwsh
+        run: |
+          $extension = if ($IsWindows) { ".exe" } else { "" }
+          $env:QUARK_NATIVE_TOOL = Join-Path $PWD "artifacts/native/${{ matrix.rid }}/Soenneker.Quark.Gen.Lucide.BuildTasks$extension"
+          dotnet test --project test/Soenneker.Quark.Gen.Lucide.Tests -c Release -p:LucideUsePrebuiltNativeTools=true -- --treenode-filter "/*/*/NativeExecutableTests/*"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.rid }}
