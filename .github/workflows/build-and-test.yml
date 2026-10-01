@@ -16,9 +16,14 @@ on:
 env:
   PipelineEnvironment: true
   NUGET_XMLDOC_MODE: skip
+  LucideUsePrebuiltNativeTools: 'true'
 
 jobs:
+  native-tools:
+    uses: ./.github/workflows/native-aot.yml
+
   build-and-test:
+    needs: native-tools
     runs-on: ubuntu-latest
 
     steps:
@@ -30,6 +35,12 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.401
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: native-*
+          path: artifacts/native
+          merge-multiple: true
 
       - name: Restore build tasks
         run: dotnet restore src/Soenneker.Quark.Gen.Lucide.BuildTasks/Soenneker.Quark.Gen.Lucide.BuildTasks.csproj --verbosity minimal

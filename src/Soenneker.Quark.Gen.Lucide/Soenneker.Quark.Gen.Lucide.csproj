@@ -8,6 +8,7 @@
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <DevelopmentDependency>true</DevelopmentDependency>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddBuildTasksOutputToPackage</TargetsForTfmSpecificContentInPackage>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -35,9 +36,6 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>icon.png</PackageIcon>
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-        <_LucideBuildTasksProjectPath>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '..', 'Soenneker.Quark.Gen.Lucide.BuildTasks', 'Soenneker.Quark.Gen.Lucide.BuildTasks.csproj'))))</_LucideBuildTasksProjectPath>
-        <_LucideBuildTasksOutputDir>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '..', 'Soenneker.Quark.Gen.Lucide.BuildTasks', 'bin', '$(Configuration)'))))</_LucideBuildTasksOutputDir>
-        <_LucideBuildTasksDllPath>$([System.IO.Path]::Combine('$(_LucideBuildTasksOutputDir)', 'Soenneker.Quark.Gen.Lucide.BuildTasks.dll'))</_LucideBuildTasksDllPath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -49,7 +47,6 @@
     <ItemGroup>
         <None Include="Soenneker.Quark.Gen.Lucide.targets" Pack="true" PackagePath="build/" />
         <None Include="Soenneker.Quark.Gen.Lucide.targets" Pack="true" PackagePath="buildTransitive/" />
-        <None Include="$([MSBuild]::EnsureTrailingSlash('$(_LucideBuildTasksOutputDir)'))**/*.*" Pack="true" PackagePath="buildTransitive/%(RecursiveDir)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -61,17 +58,37 @@
         <PackageReference Include="Soenneker.Quark.Gen.Lucide.Abstractions" Version="4.0.23" />
     </ItemGroup>
 
-    <!-- When consumed via ProjectReference, BuildTasks must exist so RunLucideGeneratorBuildTasks can run. -->
-    <Target Name="BuildBuildTasksToolOnBuild" BeforeTargets="Build" Condition="!Exists('$(_LucideBuildTasksDllPath)')">
-        <MSBuild Projects="$(_LucideBuildTasksProjectPath)" Targets="Build" Properties="Configuration=$(Configuration)" BuildInParallel="true" />
-    </Target>
-
-    <Target Name="BuildBuildTasksTool" BeforeTargets="Pack" Condition="'$(IsPackable)' == 'true'">
-        <MSBuild Projects="$(_LucideBuildTasksProjectPath)" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" BuildInParallel="true" />
-        <Error Condition="!Exists('$(_LucideBuildTasksDllPath)')" Text="BuildTasks output missing. Aborting pack to avoid publishing a broken package." />
-    </Target>
-
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="all" />
     </ItemGroup>
+    <PropertyGroup>
+        <LucideNativeRuntimeIdentifier Condition="'$(LucideNativeRuntimeIdentifier)' == ''">$(NETCoreSdkRuntimeIdentifier)</LucideNativeRuntimeIdentifier>
+        <LucideNativeArtifactsDir Condition="'$(LucideNativeArtifactsDir)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../../artifacts/native'))</LucideNativeArtifactsDir>
+        <_LucideNativeExecutable>Soenneker.Quark.Gen.Lucide.BuildTasks</_LucideNativeExecutable>
+        <_LucideNativeExecutable Condition="$([System.String]::Copy('$(LucideNativeRuntimeIdentifier)').StartsWith('win-'))">$(_LucideNativeExecutable).exe</_LucideNativeExecutable>
+    </PropertyGroup>
+
+    <Target Name="BuildBuildTasksTool" BeforeTargets="Build"
+            Condition="'$(LucideUsePrebuiltNativeTools)' != 'true'"
+            Inputs="@(LucideNativeSource);../Soenneker.Quark.Gen.Lucide.BuildTasks/obj/project.assets.json"
+            Outputs="$(LucideNativeArtifactsDir)/$(LucideNativeRuntimeIdentifier)/$(_LucideNativeExecutable)">
+        <Exec Command="dotnet publish &quot;$(MSBuildProjectDirectory)/../Soenneker.Quark.Gen.Lucide.BuildTasks/Soenneker.Quark.Gen.Lucide.BuildTasks.csproj&quot; --configuration Release --runtime $(LucideNativeRuntimeIdentifier) --output &quot;$(LucideNativeArtifactsDir)/$(LucideNativeRuntimeIdentifier)&quot;" />
+    </Target>
+
+    <ItemGroup>
+        <LucideNativeSource Include="../Soenneker.Quark.Gen.Lucide.BuildTasks/**/*.cs;../Soenneker.Quark.Gen.Lucide.BuildTasks/*.csproj"
+                             Exclude="../Soenneker.Quark.Gen.Lucide.BuildTasks/bin/**;../Soenneker.Quark.Gen.Lucide.BuildTasks/obj/**" />
+    </ItemGroup>
+
+    <Target Name="AddBuildTasksOutputToPackage" DependsOnTargets="BuildBuildTasksTool">
+        <ItemGroup>
+            <_LucideRequiredRuntime Include="win-x64;win-arm64;linux-x64;linux-arm64;osx-x64;osx-arm64" Condition="'$(LucideUsePrebuiltNativeTools)' == 'true'" />
+            <_LucideNativeFile Include="$(LucideNativeArtifactsDir)/**/*"
+                                Exclude="$(LucideNativeArtifactsDir)/**/*.pdb;$(LucideNativeArtifactsDir)/**/*.dbg;$(LucideNativeArtifactsDir)/**/*.dSYM/**" />
+            <TfmSpecificPackageFile Include="@(_LucideNativeFile)" PackagePath="tools/native/" />
+        </ItemGroup>
+        <Error Condition="'@(_LucideRequiredRuntime)' != '' and !Exists('$(LucideNativeArtifactsDir)/%(_LucideRequiredRuntime.Identity)/Soenneker.Quark.Gen.Lucide.BuildTasks') and !Exists('$(LucideNativeArtifactsDir)/%(_LucideRequiredRuntime.Identity)/Soenneker.Quark.Gen.Lucide.BuildTasks.exe')"
+               Text="Missing native lucide tool for %(_LucideRequiredRuntime.Identity)." />
+        <Error Condition="'@(_LucideNativeFile)' == ''" Text="Native lucide tools are missing. Publish BuildTasks before packing." />
+    </Target>
 </Project>

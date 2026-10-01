@@ -5,6 +5,15 @@
     </Target>
 
     <PropertyGroup>
+        <!-- Select the SDK host rather than the application's RuntimeIdentifier (for example browser-wasm). -->
+        <LucideToolRuntimeIdentifier Condition="'$(LucideToolRuntimeIdentifier)' == ''">$(NETCoreSdkRuntimeIdentifier)</LucideToolRuntimeIdentifier>
+        <_LucideExecutableName>Soenneker.Quark.Gen.Lucide.BuildTasks</_LucideExecutableName>
+        <_LucideExecutableName Condition="$([System.String]::Copy('$(LucideToolRuntimeIdentifier)').StartsWith('win-'))">$(_LucideExecutableName).exe</_LucideExecutableName>
+        <_LucideNativePackagePath>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../tools/native/$(LucideToolRuntimeIdentifier)/$(_LucideExecutableName)'))</_LucideNativePackagePath>
+        <_LucideNativeProjectPath>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../artifacts/native/$(LucideToolRuntimeIdentifier)/$(_LucideExecutableName)'))</_LucideNativeProjectPath>
+        <LucideBuildTasksExecutablePath Condition="'$(LucideBuildTasksExecutablePath)' == '' and Exists('$(_LucideNativePackagePath)')">$(_LucideNativePackagePath)</LucideBuildTasksExecutablePath>
+        <LucideBuildTasksExecutablePath Condition="'$(LucideBuildTasksExecutablePath)' == ''">$(_LucideNativeProjectPath)</LucideBuildTasksExecutablePath>
+
         <_LucideTargetsPath>$(MSBuildThisFileFullPath)</_LucideTargetsPath>
         <LucideGeneratorBuildEnabled Condition="'$(LucideGeneratorBuildEnabled)'==''">true</LucideGeneratorBuildEnabled>
         <LucideIncludeSvgProvider Condition="'$(LucideIncludeSvgProvider)'==''">true</LucideIncludeSvgProvider>
@@ -33,7 +42,7 @@
         </PropertyGroup>
     </Target>
 
-    <!-- Resolve LucideBuildTasksDllPath and output paths at target execution time (IntermediateOutputPath is not set when this .targets file is loaded). Package-scoped property names avoid collisions when multiple Soenneker.Quark.Gen.* packages are referenced. -->
+    <!-- Resolve LucideBuildTasksExecutablePath and output paths at target execution time (IntermediateOutputPath is not set when this .targets file is loaded). Package-scoped property names avoid collisions when multiple Soenneker.Quark.Gen.* packages are referenced. -->
     <Target Name="ResolveLucideBuildTasksPath" BeforeTargets="RunLucideGeneratorBuildTasks;IncludeGeneratedLucideSources;IncludeGeneratedLucideSourcesDesignTime">
         <PropertyGroup>
             <!-- Output paths: set at execution time so $(IntermediateOutputPath) is defined by the SDK. -->
@@ -45,22 +54,6 @@
             <_LucideResourcesArg Condition="'$(LucideIconsResourcesPath)' != ''"> --resourcesPath &quot;$(LucideIconsResourcesPath)&quot;</_LucideResourcesArg>
             <_LucideResourcesArg Condition="'$(_LucideResourcesArg)' == '' and Exists('$(_LucideIconsPackageResources)')"> --resourcesPath &quot;$(_LucideIconsPackageResources)&quot;</_LucideResourcesArg>
             <_LucideResourcesArg Condition="'$(_LucideResourcesArg)' == ''"> --resourcesPath &quot;$([System.IO.Path]::Combine('$(IntermediateOutputPath)', 'Resources'))&quot;</_LucideResourcesArg>
-        </PropertyGroup>
-        <PropertyGroup Condition="'$(LucideBuildTasksDllPath)' == ''">
-            <!-- Preferred: DLL next to .targets in build\ (NuGet package with flat pack). -->
-            <_LucideBuildTasksCandidateFromPackage>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'Soenneker.Quark.Gen.Lucide.BuildTasks.dll'))</_LucideBuildTasksCandidateFromPackage>
-            <!-- buildTransitive flat (legacy). -->
-            <_LucideBuildTasksCandidateFromBuildTransitive>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'buildTransitive', 'Soenneker.Quark.Gen.Lucide.BuildTasks.dll'))))</_LucideBuildTasksCandidateFromBuildTransitive>
-            <!-- buildTransitive with Configuration subdir (older 4.x packages used %(RecursiveDir)). -->
-            <_LucideBuildTasksCandidateFromBuildTransitiveRelease>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'buildTransitive', 'Release', 'Soenneker.Quark.Gen.Lucide.BuildTasks.dll'))))</_LucideBuildTasksCandidateFromBuildTransitiveRelease>
-            <_LucideBuildTasksCandidateFromBuildTransitiveDebug>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'buildTransitive', 'Debug', 'Soenneker.Quark.Gen.Lucide.BuildTasks.dll'))))</_LucideBuildTasksCandidateFromBuildTransitiveDebug>
-            <!-- ProjectReference / local dev. -->
-            <_LucideBuildTasksCandidateFromProject>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'Soenneker.Quark.Gen.Lucide.BuildTasks', 'bin', '$(Configuration)', 'Soenneker.Quark.Gen.Lucide.BuildTasks.dll'))))</_LucideBuildTasksCandidateFromProject>
-            <LucideBuildTasksDllPath Condition="Exists('$(_LucideBuildTasksCandidateFromPackage)')">$(_LucideBuildTasksCandidateFromPackage)</LucideBuildTasksDllPath>
-            <LucideBuildTasksDllPath Condition="'$(LucideBuildTasksDllPath)' == '' and Exists('$(_LucideBuildTasksCandidateFromBuildTransitive)')">$(_LucideBuildTasksCandidateFromBuildTransitive)</LucideBuildTasksDllPath>
-            <LucideBuildTasksDllPath Condition="'$(LucideBuildTasksDllPath)' == '' and Exists('$(_LucideBuildTasksCandidateFromBuildTransitiveRelease)')">$(_LucideBuildTasksCandidateFromBuildTransitiveRelease)</LucideBuildTasksDllPath>
-            <LucideBuildTasksDllPath Condition="'$(LucideBuildTasksDllPath)' == '' and Exists('$(_LucideBuildTasksCandidateFromBuildTransitiveDebug)')">$(_LucideBuildTasksCandidateFromBuildTransitiveDebug)</LucideBuildTasksDllPath>
-            <LucideBuildTasksDllPath Condition="'$(LucideBuildTasksDllPath)' == '' and Exists('$(_LucideBuildTasksCandidateFromProject)')">$(_LucideBuildTasksCandidateFromProject)</LucideBuildTasksDllPath>
         </PropertyGroup>
     </Target>
 
@@ -75,7 +68,7 @@
             <_LucideResourceRoot Condition="'$(LucideIconsResourcesPath)'!=''">$(LucideIconsResourcesPath)</_LucideResourceRoot>
         </PropertyGroup>
         <ItemGroup>
-            <_LucideTrackedInputs Include="@(_LucideGeneratorInputs);$(_LucideResourceRoot)/*.svg;$(_LucideTargetsPath);$(MSBuildProjectFullPath);$(MSBuildAllProjects);$(ProjectAssetsFile);$(LucideBuildTasksDllPath)" />
+            <_LucideTrackedInputs Include="@(_LucideGeneratorInputs);$(_LucideResourceRoot)/*.svg;$(_LucideTargetsPath);$(MSBuildProjectFullPath);$(MSBuildAllProjects);$(ProjectAssetsFile);$(LucideBuildTasksExecutablePath)" />
         </ItemGroup>
         <MakeDir Directories="$(IntermediateOutputPath)" />
         <WriteLinesToFile File="$(_LucideInputManifest)"
@@ -94,17 +87,19 @@
         <Message Importance="high" Text="Running Soenneker.Quark.Gen.Lucide BuildTasks: projectDir=$(_LucideProjectDir)" />
         <Error Condition="'$(_LucideProjectDir)' == ''"
                Text="Soenneker.Quark.Gen.Lucide: project directory could not be resolved. Set LucideProjectDir or build a project that has a valid project directory." />
-        <Error Condition="'$(LucideBuildTasksDllPath)'==''"
-               Text="LucideBuildTasksDllPath was not resolved. MSBuildThisFileDirectory=$(MSBuildThisFileDirectory)" />
-        <Error Condition="!Exists('$(LucideBuildTasksDllPath)')"
-               Text="Lucide BuildTasks DLL not found at '$(LucideBuildTasksDllPath)'." />
+        <Error Condition="'$(LucideBuildTasksExecutablePath)'==''"
+               Text="LucideBuildTasksExecutablePath was not resolved. MSBuildThisFileDirectory=$(MSBuildThisFileDirectory)" />
+        <Error Condition="!Exists('$(LucideBuildTasksExecutablePath)')"
+               Text="Lucide native BuildTasks executable not found at '$(LucideBuildTasksExecutablePath)'." />
 
+        <!-- NuGet extraction does not preserve Unix execute permissions. -->
+        <Exec Condition="'$(OS)' != 'Windows_NT'" Command="chmod +x &quot;$(LucideBuildTasksExecutablePath)&quot;" />
         <Exec WorkingDirectory="$(_LucideProjectDir)"
               IgnoreExitCode="false"
               ConsoleToMSBuild="true"
               StandardOutputImportance="high"
               StandardErrorImportance="high"
-              Command='dotnet exec &quot;$(LucideBuildTasksDllPath)&quot; --projectDir &quot;$(_LucideProjectDir)&quot;$(_LucideOutputArg)$(_LucideResourcesArg)' />
+              Command='&quot;$(LucideBuildTasksExecutablePath)&quot; --projectDir &quot;$(_LucideProjectDir)&quot;$(_LucideOutputArg)$(_LucideResourcesArg)' />
         <Touch Files="$(_LucideSuccessStamp)" AlwaysCreate="true" />
     </Target>
 
