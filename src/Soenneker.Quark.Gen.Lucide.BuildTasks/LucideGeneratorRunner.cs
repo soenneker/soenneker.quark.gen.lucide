@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Soenneker.Extensions.String;
 using Soenneker.Extensions.Task;
 using Soenneker.Extensions.ValueTask;
-using Soenneker.Hashing.Sha256;
 using Soenneker.Quark.Gen.Lucide.BuildTasks.Abstract;
 using Soenneker.Utils.Case;
 using Soenneker.Utils.Directory.Abstract;
@@ -22,12 +20,6 @@ namespace Soenneker.Quark.Gen.Lucide.BuildTasks;
 /// <inheritdoc cref="ILucideGeneratorRunner" />
 public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
 {
-    private static readonly Sha256HashingUtil _sha256 = new();
-
-    private static readonly Regex _csIconPattern = new(
-        @"LucideIcon\.([A-Za-z0-9_]+)",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
     private readonly ILogger<LucideGeneratorRunner> _logger;
     private readonly IFileUtil _fileUtil;
     private readonly IDirectoryUtil _directoryUtil;
@@ -149,40 +141,39 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
     {
         var entries = new List<string>();
 
-        await AddFileMetadataEntries(entries, projectDir, ".cs", cancellationToken).NoSync();
-        await AddFileMetadataEntries(entries, projectDir, ".razor", cancellationToken).NoSync();
-        await AddFileMetadataEntries(entries, resourcesDir, ".svg", cancellationToken).NoSync();
+        AddFileMetadataEntries(entries, projectDir, [".cs", ".razor"], cancellationToken);
+        AddFileMetadataEntries(entries, resourcesDir, [".svg"], cancellationToken);
 
         string assemblyLocation = System.IO.Path.Combine(AppContext.BaseDirectory, typeof(LucideGeneratorRunner).Assembly.GetName().Name + ".dll");
         if (!System.IO.File.Exists(assemblyLocation))
             assemblyLocation = Environment.ProcessPath ?? string.Empty;
-        if (!string.IsNullOrWhiteSpace(assemblyLocation) && (await _fileUtil.Exists(assemblyLocation)))
+        if (!string.IsNullOrWhiteSpace(assemblyLocation) && (await _fileUtil.Exists(assemblyLocation).NoSync()))
         {
             entries.Add(BuildMetadataEntry("buildtasks", assemblyLocation, assemblyLocation));
         }
 
         entries.Sort(StringComparer.Ordinal);
 
-        string manifest = string.Join('\n', entries);
-        byte[] bytes = _sha256.Hash(Encoding.UTF8.GetBytes(manifest));
-        return Convert.ToHexString(bytes);
+        return MetadataHash.Compute(entries);
     }
 
-    private async ValueTask AddFileMetadataEntries(List<string> entries, string rootDir, string extension, CancellationToken cancellationToken)
+    private static void AddFileMetadataEntries(List<string> entries, string rootDir, string[] extensions, CancellationToken cancellationToken)
     {
-        if (!await _directoryUtil.Exists(rootDir, cancellationToken).NoSync())
-            return;
-
-        List<string> files = ProjectFileEnumerator.EnumerateByExtension(rootDir, extension, cancellationToken).ToList();
-
-        foreach (string file in files)
+        foreach ((string file, long length, long lastWriteTimeTicks) in ProjectFileEnumerator.EnumerateMetadata(rootDir, extensions, cancellationToken))
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
             if (IsExcludedProjectPath(file))
                 continue;
 
-            entries.Add(BuildMetadataEntry(rootDir, file, extension));
+            ReadOnlySpan<char> actualExtension = Path.GetExtension(file.AsSpan());
+            foreach (string extension in extensions)
+            {
+                if (!actualExtension.Equals(extension, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string relativePath = Path.GetRelativePath(rootDir, file).Replace('\\', '/');
+                entries.Add($"{extension}|{relativePath}|{length}|{lastWriteTimeTicks}");
+                break;
+            }
         }
     }
 
@@ -191,8 +182,8 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         if (!await _directoryUtil.Exists(resourcesDir, cancellationToken).NoSync())
             return false;
 
-        List<string> files = await _directoryUtil.GetFilesByExtension(resourcesDir, ".svg", recursive: false, cancellationToken).NoSync();
-        return files.Count > 0;
+        cancellationToken.ThrowIfCancellationRequested();
+        return Directory.EnumerateFiles(resourcesDir, "*.svg", SearchOption.TopDirectoryOnly).Any();
     }
 
     private static string BuildMetadataEntry(string rootDir, string filePath, string category)
@@ -213,8 +204,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
     private async Task<HashSet<string>> CollectIconsFromProject(string projectDir, CancellationToken ct)
     {
         var icons = new HashSet<string>(StringComparer.Ordinal);
-        IEnumerable<string> allFiles = ProjectFileEnumerator.EnumerateByExtension(projectDir, ".cs", ct)
-            .Concat(ProjectFileEnumerator.EnumerateByExtension(projectDir, ".razor", ct));
+        IEnumerable<string> allFiles = ProjectFileEnumerator.EnumerateByExtensions(projectDir, [".cs", ".razor"], ct);
 
         foreach (string file in allFiles)
         {
@@ -225,18 +215,7 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
                 continue;
             }
 
-            // Use _csIconPattern for both: it matches any LucideIcon.Name (method args, Icon="...", etc.)
-            foreach (Match m in _csIconPattern.Matches(content))
-            {
-                if (m.Success && m.Groups.Count >= 2)
-                {
-                    string name = m.Groups[1].Value;
-                    if (!string.IsNullOrEmpty(name))
-                    {
-                        icons.Add(name);
-                    }
-                }
-            }
+            IconUsageScanner.Collect(content, "LucideIcon.", icons);
         }
 
         return icons;

@@ -1,3 +1,5 @@
+using Soenneker.Extensions.ValueTask;
+using Soenneker.Extensions.Task;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -20,8 +22,8 @@ public sealed class NativeExecutableTests
         {
             string resources = Path.Combine(directory, "Resources");
             Directory.CreateDirectory(resources);
-            await File.WriteAllTextAsync(Path.Combine(resources, "search.svg"), "<svg><path d=\"M1 2\"/></svg>");
-            await File.WriteAllTextAsync(Path.Combine(directory, "Usage.cs"), "var icon = LucideIcon.Search;");
+            await File.WriteAllTextAsync(Path.Combine(resources, "search.svg"), "<svg><path d=\"M1 2\"/></svg>").NoSync();
+            await File.WriteAllTextAsync(Path.Combine(directory, "Usage.cs"), "var icon = LucideIcon.Search;").NoSync();
             string output = Path.Combine(directory, "obj", "Generated", "Map.g.cs");
             string[] arguments = ["--projectDir", directory, "--resourcesPath", resources, "--output", output];
             string[] expectedValues = ["M1 2", "Search"];
@@ -30,15 +32,15 @@ public sealed class NativeExecutableTests
                 var start = new ProcessStartInfo(executable) { UseShellExecute = false };
                 foreach (string argument in arguments) start.ArgumentList.Add(argument);
                 using var process = Process.Start(start) ?? throw new Exception("Native tool could not start.");
-                await process.WaitForExitAsync();
+                await process.WaitForExitAsync().NoSync();
                 if (process.ExitCode != 0) throw new Exception("Native tool failed: " + process.ExitCode);
             }
-            await Run();
-            string content = await File.ReadAllTextAsync(output);
+            await Run().NoSync();
+            string content = await File.ReadAllTextAsync(output).NoSync();
             foreach (string expected in expectedValues)
                 if (!content.Contains(expected, StringComparison.Ordinal)) throw new Exception("Native output is missing " + expected);
             DateTime timestamp = File.GetLastWriteTimeUtc(output);
-            await Run();
+            await Run().NoSync();
             if (File.GetLastWriteTimeUtc(output) != timestamp) throw new Exception("Unchanged native output was rewritten.");
         }
         finally { Directory.Delete(directory, recursive: true); }

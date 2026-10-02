@@ -14,5 +14,14 @@
     <ItemGroup>
         <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Lucide\Soenneker.Quark.Gen.Lucide.csproj" />
     </ItemGroup>
+    <ItemGroup>
+        <Compile Include="../../src/Soenneker.Quark.Gen.Lucide.BuildTasks/ProjectFileEnumerator.cs" Link="ProjectFileEnumerator.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="../../src/Soenneker.Quark.Gen.Lucide.BuildTasks/MetadataHash.cs" Link="MetadataHash.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="../../src/Soenneker.Quark.Gen.Lucide.BuildTasks/IconUsageScanner.cs" Link="IconUsageScanner.cs" />
+    </ItemGroup>
 </Project>
 

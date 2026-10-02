@@ -1,3 +1,5 @@
+using Soenneker.Extensions.ValueTask;
+using Soenneker.Extensions.Task;
 using Soenneker.Quark.Gen.Lucide.BuildTasks.Abstract;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -41,9 +43,23 @@ public sealed class Program
             services.AddLogging(logging => logging.AddConsole());
             Startup.ConfigureServices(services);
 
-            await using ServiceProvider provider = services.BuildServiceProvider();
-            await using AsyncServiceScope scope = provider.CreateAsyncScope();
-            Environment.ExitCode = await scope.ServiceProvider.GetRequiredService<ILucideGeneratorRunner>().Run(_cts.Token);
+            ServiceProvider provider = services.BuildServiceProvider();
+            try
+            {
+                AsyncServiceScope scope = provider.CreateAsyncScope();
+                try
+                {
+                    Environment.ExitCode = await scope.ServiceProvider.GetRequiredService<ILucideGeneratorRunner>().Run(_cts.Token).NoSync();
+                }
+                finally
+                {
+                    await scope.DisposeAsync().NoSync();
+                }
+            }
+            finally
+            {
+                await provider.DisposeAsync().NoSync();
+            }
         }
         catch (OperationCanceledException) when (_cts.IsCancellationRequested)
         {
@@ -51,7 +67,7 @@ public sealed class Program
         }
         catch (Exception e)
         {
-            await Console.Error.WriteLineAsync($"Stopped program because of exception: {e}");
+            await Console.Error.WriteLineAsync($"Stopped program because of exception: {e}").NoSync();
             Environment.ExitCode = 1;
         }
         finally
