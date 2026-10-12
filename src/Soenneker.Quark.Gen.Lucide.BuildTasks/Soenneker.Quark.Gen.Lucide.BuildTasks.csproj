@@ -16,10 +16,10 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.12" />
         <PackageReference Include="Soenneker.Utils.Case" Version="4.0.101" />
-        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.949" />
-        <PackageReference Include="Soenneker.Utils.File" Version="4.0.2296" />
+        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.951" />
+        <PackageReference Include="Soenneker.Utils.File" Version="4.0.2299" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Soenneker.Extensions.ValueTask" Version="4.0.125" />
+        <PackageReference Include="Soenneker.Extensions.ValueTask" Version="4.0.126" />
     </ItemGroup>
 </Project>
