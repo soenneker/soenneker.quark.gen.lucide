@@ -145,4 +145,9 @@
             <Compile Include="$(LucideServiceCollectionExtensionsOutput)" />
         </ItemGroup>
     </Target>
+    <Target Name="ValidateSoennekerQuarkGenLucideTargetFramework" BeforeTargets="PrepareForBuild;CoreCompile"
+            Condition="'$(TargetFramework)' != '' and '$(IsCrossTargetingBuild)' != 'true'">
+        <Error Condition="'$(TargetFrameworkIdentifier)' != '.NETCoreApp' or !$([MSBuild]::VersionGreaterThanOrEquals('$(TargetFrameworkVersion)', '10.0'))"
+               Text="Soenneker.Quark.Gen.Lucide requires a consumer targeting .NET 10 or later. Current target: $(TargetFramework)." />
+    </Target>
 </Project>
