@@ -15,9 +15,9 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.13" />
-        <PackageReference Include="Soenneker.Utils.Case" Version="4.0.114" />
-        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.965" />
-        <PackageReference Include="Soenneker.Utils.File" Version="4.0.2318" />
+        <PackageReference Include="Soenneker.Utils.Case" Version="4.0.115" />
+        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.967" />
+        <PackageReference Include="Soenneker.Utils.File" Version="4.0.2319" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Soenneker.Extensions.ValueTask" Version="4.0.133" />
