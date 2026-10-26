@@ -19,7 +19,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.Gateway" Version="11.0.0-rc.3.26522.148" PrivateAssets="all" />
         <PackageReference Include="Soenneker.Lucide.Enums.Icons" Version="11.0.86" />
         <PackageReference Include="Soenneker.Lucide.Icons" Version="5.0.104" />
-        <PackageReference Include="Soenneker.Quark.Gen.Lucide.Abstractions" Version="4.0.33" />
+        <PackageReference Include="Soenneker.Quark.Gen.Lucide.Abstractions" Version="11.0.34" />
     </ItemGroup>
 
     <ItemGroup>
