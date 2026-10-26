@@ -31,7 +31,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 10.0.402
+          dotnet-version: 11.0.100-rc.3.26522.148
       - name: Publish Native AOT executable
         run: dotnet publish src/Soenneker.Quark.Gen.Lucide.BuildTasks -c Release -r ${{ matrix.rid }} -o artifacts/native/${{ matrix.rid }}
       - name: Verify native generator output
