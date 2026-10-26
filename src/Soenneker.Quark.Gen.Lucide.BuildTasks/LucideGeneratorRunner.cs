@@ -104,19 +104,19 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         }
 
         _logger.LogInformation("Writing LucideIconSvgMap to {OutputPath}.", outputPath);
-        await _fileUtil.Write(outputPath, content, log: true, cancellationToken).NoSync();
+        await _fileUtil.WriteAtomically(outputPath, content, log: true, cancellationToken).NoSync();
         _logger.LogInformation("Generated {Output} with {Count} icons.", outputPath, icons.Count);
 
         string providerContent = GenerateLucideIconSvgProvider();
         _logger.LogInformation("Writing LucideIconSvgProvider to {ProviderPath}.", providerPath);
-        await _fileUtil.Write(providerPath, providerContent, log: true, cancellationToken).NoSync();
+        await _fileUtil.WriteAtomically(providerPath, providerContent, log: true, cancellationToken).NoSync();
         _logger.LogInformation("Generated {ProviderPath}.", providerPath);
 
         string extensionsContent = GenerateLucideIconServiceCollectionExtensions();
         _logger.LogInformation("Writing LucideIconServiceCollectionExtensions to {ExtensionsPath}.", extensionsPath);
-        await _fileUtil.Write(extensionsPath, extensionsContent, log: true, cancellationToken).NoSync();
+        await _fileUtil.WriteAtomically(extensionsPath, extensionsContent, log: true, cancellationToken).NoSync();
         _logger.LogInformation("Generated {ExtensionsPath}.", extensionsPath);
-        await _fileUtil.Write(hashPath, inputHash, log: false, cancellationToken).NoSync();
+        await _fileUtil.WriteAtomically(hashPath, inputHash, log: false, cancellationToken).NoSync();
         _logger.LogInformation("Completed Lucide icon generation for project {ProjectDir}.", projectDir);
 
         return 0;
@@ -145,11 +145,11 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         AddFileMetadataEntries(entries, resourcesDir, [".svg"], cancellationToken);
 
         string assemblyLocation = System.IO.Path.Combine(AppContext.BaseDirectory, typeof(LucideGeneratorRunner).Assembly.GetName().Name + ".dll");
-        if (!System.IO.File.Exists(assemblyLocation))
+        if (!await _fileUtil.Exists(assemblyLocation, cancellationToken).NoSync())
             assemblyLocation = Environment.ProcessPath ?? string.Empty;
-        if (!string.IsNullOrWhiteSpace(assemblyLocation) && (await _fileUtil.Exists(assemblyLocation).NoSync()))
+        if (!string.IsNullOrWhiteSpace(assemblyLocation) && await _fileUtil.Exists(assemblyLocation, cancellationToken).NoSync())
         {
-            entries.Add(BuildMetadataEntry("buildtasks", assemblyLocation, assemblyLocation));
+            entries.Add(await BuildMetadataEntry("buildtasks", assemblyLocation, assemblyLocation, cancellationToken).NoSync());
         }
 
         entries.Sort(StringComparer.Ordinal);
@@ -186,11 +186,14 @@ public sealed class LucideGeneratorRunner : ILucideGeneratorRunner
         return Directory.EnumerateFiles(resourcesDir, "*.svg", SearchOption.TopDirectoryOnly).Any();
     }
 
-    private static string BuildMetadataEntry(string rootDir, string filePath, string category)
+    private async ValueTask<string> BuildMetadataEntry(string rootDir, string filePath, string category, CancellationToken cancellationToken)
     {
-        var info = new FileInfo(filePath);
+        long length = await _fileUtil.GetSize(filePath, cancellationToken).NoSync()
+            ?? throw new FileNotFoundException("Cannot read metadata for the generator executable.", filePath);
+        DateTimeOffset lastModified = await _fileUtil.GetLastModified(filePath, cancellationToken).NoSync()
+            ?? throw new FileNotFoundException("Cannot read metadata for the generator executable.", filePath);
         string relativePath = Path.GetRelativePath(rootDir, filePath).Replace('\\', '/');
-        return $"{category}|{relativePath}|{info.Length}|{info.LastWriteTimeUtc.Ticks}";
+        return $"{category}|{relativePath}|{length}|{lastModified.UtcTicks}";
     }
 
     private static bool IsExcludedProjectPath(string path)
