@@ -2,6 +2,7 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net11.0</TargetFramework>
+        <Features Condition="'$(TargetFramework)' == 'net11.0'">$(Features);runtime-async=on</Features>
         <IsAotCompatible>true</IsAotCompatible>
         <PublishAot>true</PublishAot>
         <Nullable>enable</Nullable>
