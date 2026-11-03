@@ -17,7 +17,7 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="11.0.0-rc.3.26522.148" />
         <PackageReference Include="Soenneker.Utils.Case" Version="11.0.118" />
         <PackageReference Include="Soenneker.Utils.Directory" Version="11.0.971" />
-        <PackageReference Include="Soenneker.Utils.File" Version="11.0.2331" />
+        <PackageReference Include="Soenneker.Utils.File" Version="11.0.2332" />
     </ItemGroup>
     <ItemGroup>
     </ItemGroup>
