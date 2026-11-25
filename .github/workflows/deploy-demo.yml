@@ -61,7 +61,8 @@ jobs:
       - name: Set Base Href for GitHub Pages
         run: |
           cd test/Soenneker.Quark.Gen.Lucide.Demo/bin/Release/net11.0/publish/wwwroot
-          sed -i 's|%BASE_URL%|/${{ github.event.repository.name }}/|g' index.html || exit 1
+          sed -i 's|<base href="/"|<base href="/${{ github.event.repository.name }}/"|' index.html
+          grep -Fq '<base href="/${{ github.event.repository.name }}/"' index.html
 
       - name: Add .nojekyll
         run: touch test/Soenneker.Quark.Gen.Lucide.Demo/bin/Release/net11.0/publish/wwwroot/.nojekyll
